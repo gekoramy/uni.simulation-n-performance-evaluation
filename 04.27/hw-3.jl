@@ -21,10 +21,12 @@ const xs = readdlm("data_ex3.csv", ',', Float64)[1:end]
 
 # ╔═╡ 1ad1a1f8-c0aa-41ba-bf33-e18d428d7a63
 md"""
+Since ``n`` is large, the binomial distribution can be approximated by a Gaussian distribution, thus:
+
 ```math
 l \sim \left\lfloor nq - z_{\frac {1 + \gamma} 2} \cdot \sqrt{nq (1 - q)} \right\rfloor
 \qquad
-u \sim \left\lceil nq - z_{\frac {1 + \gamma} 2} \cdot \sqrt{nq (1 - q)} \right\rceil + 1
+u \sim \left\lceil nq + z_{\frac {1 + \gamma} 2} \cdot \sqrt{nq (1 - q)} \right\rceil + 1
 ```
 """
 
@@ -39,7 +41,7 @@ begin
     end
 
     local upper = q -> begin
-        ceil(Int64, n * q - η * sqrt(n * q * (1 - q))) + 1
+        ceil(Int64, n * q + η * sqrt(n * q * (1 - q))) + 1
     end
 
     const (q10, q25, q50, q75, q90) =
@@ -103,12 +105,20 @@ end
 
 # ╔═╡ ebad8bb4-ab82-49b8-89d7-450555024081
 begin
-    plot(sort(xs), cdfy(xs), label = "ECDF")
-    vline!([q10], label = "D1")
-    vline!([q25], label = "Q1")
-    vline!([q50], label = "Q2")
-    vline!([q75], label = "Q3")
-    vline!([q90], label = "D9")
+    plot(sort(xs), cdfy(xs), label = "ECDF", dpi = 300)
+
+    vline!([q10], label = "D1", color = 2)
+    vline!([q25], label = "Q1", color = 3)
+    vline!([q50], label = "Q2", color = 4)
+    vline!([q75], label = "Q3", color = 5)
+    vline!([q90], label = "D9", color = 6)
+
+    vspan!([q10L, q10U], label = "", color = 2, fillstyle = :/)
+    vspan!([q25L, q25U], label = "", color = 3, fillstyle = :/)
+    vspan!([q50L, q50U], label = "", color = 4, fillstyle = :/)
+    vspan!([q75L, q75U], label = "", color = 5, fillstyle = :/)
+    vspan!([q90L, q90U], label = "", color = 6, fillstyle = :/)
+
     xlabel!("x")
     ylabel!("P(X > x)")
 end
