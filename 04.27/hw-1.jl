@@ -50,10 +50,10 @@ md"""
 
 # ╔═╡ 5d1ad6b3-fd01-401d-a66e-5d65d5b9294d
 begin
-	const n = length(xs)
-	const μ = mean(xs)
-	const σ = std(xs)
-	const cov = σ / μ
+    const n = length(xs)
+    const μ = mean(xs)
+    const σ = std(xs)
+    const cov = σ / μ
 end
 
 # ╔═╡ 249f095a-64c0-43b6-8538-07fff270e47a
@@ -65,13 +65,13 @@ md"""
 
 # ╔═╡ 9077f137-2458-44a7-9050-fb23b3821020
 begin
-	const lcg = xs -> begin
-		local n = length(xs)
-		local μ = mean(xs)
-		local mad = sum(map(x -> abs(x - μ), xs)) / n
-		mad / (2 * μ)
-	end
-	const gap = lcg(xs)
+    const lcg = xs -> begin
+        local n = length(xs)
+        local μ = mean(xs)
+        local mad = sum(map(x -> abs(x - μ), xs)) / n
+        mad / (2 * μ)
+    end
+    const gap = lcg(xs)
 end
 
 # ╔═╡ be646bcf-2167-4a9e-b7d2-00c5490e97f9
@@ -85,12 +85,12 @@ l_i = \frac{X_{(1)} + \ldots + X_{(i)}}{n \hat \mu}
 
 # ╔═╡ a394eec7-bbcf-4a95-8018-dd1217e81669
 begin
-	const lc = xs′ -> begin
-		local ss = sort(xs′)
-		cumsum(ss) / (length(ss) * mean(ss))
-	end
-	plot((1:n) / n, lc(xs), label = "Lorenz curve")
-	plot!([0, 1], [0, 1], label = "Perfect equality")
+    const lc = xs′ -> begin
+        local ss = sort(xs′)
+        cumsum(ss) / (length(ss) * mean(ss))
+    end
+    plot((1:n) / n, lc(xs), label = "Lorenz curve")
+    plot!([0, 1], [0, 1], label = "Perfect equality")
 end
 
 # ╔═╡ 519c9a52-0283-46f5-8d59-27d986efe602
@@ -102,11 +102,11 @@ md"""
 
 # ╔═╡ cf6385e0-2457-47c9-8758-1d921a945a3c
 begin
-	const jfi = xs′ -> begin
-		local n′ = length(xs′)
-		sum(xs′)^2 / (n′ * sum(map(x -> x^2, xs′)))
-	end
-	jfi(xs)
+    const jfi = xs′ -> begin
+        local n′ = length(xs′)
+        sum(xs′)^2 / (n′ * sum(map(x -> x^2, xs′)))
+    end
+    jfi(xs)
 end
 
 # ╔═╡ 64b9e905-600f-4db2-b2c6-3a20e2fa82f5
@@ -124,64 +124,62 @@ md"""
 """
 
 # ╔═╡ 86857496-fc82-4af6-aa3c-2d8c11a54dcb
-bootstrap = xs -> fn -> γ -> begin
-	local r0 = 25
-	local R = ceil(Int64, 2 * r0 / (1 - γ)) - 1
-	local ts =
-		IterTools.repeatedly(R) do
-			rand(seed, xs, length(xs)) |> fn
-		end |>
-			collect |>
-			sort
-	(ts[r0], ts[R + 1 - r0])
-end
+bootstrap =
+    xs -> fn -> γ -> begin
+        local r0 = 25
+        local R = ceil(Int64, 2 * r0 / (1 - γ)) - 1
+        local ts = IterTools.repeatedly(R) do
+            rand(seed, xs, length(xs)) |> fn
+        end |> collect |> sort
+        (ts[r0], ts[R+1-r0])
+    end
 
 # ╔═╡ ef94e713-5799-4da7-99ea-d74380ef98c8
 begin
-	local (μ99L, μ99U) = bootstrap(xs)(mean)(.99)
-	local (μ95L, μ95U) = bootstrap(xs)(mean)(.95)
+    local (μ99L, μ99U) = bootstrap(xs)(mean)(0.99)
+    local (μ95L, μ95U) = bootstrap(xs)(mean)(0.95)
 
-	Markdown.parse("""
-	```math
-	\\hat \\mu = $(μ) \\in [$(μ95L), $(μ95U)] \\subset [$(μ99L), $(μ99U)]
-	```
-	""")
+    Markdown.parse("""
+    ```math
+    \\hat \\mu = $(μ) \\in [$(μ95L), $(μ95U)] \\subset [$(μ99L), $(μ99U)]
+    ```
+    """)
 end
 
 # ╔═╡ 2531987e-37e8-4fa9-8039-92e85c78268d
 begin
-	local (σ99L, σ99U) = bootstrap(xs)(std)(.99)
-	local (σ95L, σ95U) = bootstrap(xs)(std)(.95)
+    local (σ99L, σ99U) = bootstrap(xs)(std)(0.99)
+    local (σ95L, σ95U) = bootstrap(xs)(std)(0.95)
 
-	Markdown.parse("""
-	```math
-	\\hat \\sigma = $(σ) \\in [$(σ95L), $(σ95U)] \\subset [$(σ99L), $(σ95U)]
-	```
-	""")
+    Markdown.parse("""
+    ```math
+    \\hat \\sigma = $(σ) \\in [$(σ95L), $(σ95U)] \\subset [$(σ99L), $(σ95U)]
+    ```
+    """)
 end
 
 # ╔═╡ 427cdc2a-fd50-49cf-aa67-56f7083fd913
 begin
-	local (gap99L, gap99U) = bootstrap(xs)(lcg)(.99)
-	local (gap95L, gap95U) = bootstrap(xs)(lcg)(.95)
+    local (gap99L, gap99U) = bootstrap(xs)(lcg)(0.99)
+    local (gap95L, gap95U) = bootstrap(xs)(lcg)(0.95)
 
-	Markdown.parse("""
-	```math
-	{ \\rm gap } = $(gap) \\in [$(gap95L), $(gap95U)] \\subset [$(gap99L), $(gap99U)]
-	```
-	""")
+    Markdown.parse("""
+    ```math
+    { \\rm gap } = $(gap) \\in [$(gap95L), $(gap95U)] \\subset [$(gap99L), $(gap99U)]
+    ```
+    """)
 end
 
 # ╔═╡ debfe214-d948-4317-aa1e-b00c4c7d6a90
 begin
-	local (jfi99L, jfi99U) = bootstrap(xs)(jfi)(.99)
-	local (jfi95L, jfi95U) = bootstrap(xs)(jfi)(.95)
+    local (jfi99L, jfi99U) = bootstrap(xs)(jfi)(0.99)
+    local (jfi95L, jfi95U) = bootstrap(xs)(jfi)(0.95)
 
-	Markdown.parse("""
-	```math
-	{ \\rm JFI} = $(jfi(xs)) \\in [$(jfi95L), $(jfi95U)] \\subset [$(jfi99L), $(jfi99U)]
-	```
-	""")
+    Markdown.parse("""
+    ```math
+    { \\rm JFI} = $(jfi(xs)) \\in [$(jfi95L), $(jfi95U)] \\subset [$(jfi99L), $(jfi99U)]
+    ```
+    """)
 end
 
 # ╔═╡ 73774c4c-0dab-481a-b277-75cdb68cecad
@@ -200,23 +198,23 @@ md"""
 
 # ╔═╡ 3672eecb-2cfb-4217-a806-1066bd473f8a
 begin
-	local η95 = quantile.(Normal(), (1 + 0.95) / 2)
-	local η99 = quantile.(Normal(), (1 + 0.99) / 2)
-	
-	local δμ95 = η95 * σ / sqrt(n)
-	local δμ99 = η99 * σ / sqrt(n)
-	
-	local μL95 = μ - δμ95
-	local μU95 = μ + δμ95
+    local η95 = quantile.(Normal(), (1 + 0.95) / 2)
+    local η99 = quantile.(Normal(), (1 + 0.99) / 2)
 
-	local μL99 = μ - δμ99
-	local μU99 = μ + δμ99
+    local δμ95 = η95 * σ / sqrt(n)
+    local δμ99 = η99 * σ / sqrt(n)
 
-	Markdown.parse("""
-	```math
-	\\hat \\mu = $(μ) \\in [$(μL95), $(μU95)] \\subset [$(μL99), $(μU99)]
-	```
-	""")
+    local μL95 = μ - δμ95
+    local μU95 = μ + δμ95
+
+    local μL99 = μ - δμ99
+    local μU99 = μ + δμ99
+
+    Markdown.parse("""
+    ```math
+    \\hat \\mu = $(μ) \\in [$(μL95), $(μU95)] \\subset [$(μL99), $(μU99)]
+    ```
+    """)
 end
 
 # ╔═╡ c270ee13-3ab2-4df8-ae9f-ff2959aa3046

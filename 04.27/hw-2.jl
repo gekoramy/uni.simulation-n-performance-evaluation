@@ -39,12 +39,12 @@ f(x) = \frac 1 A e^{-\frac{|x|}{4}} \left( \sin(|x|) + 1 \right) \qquad x \in \l
 """
 
 # ╔═╡ 3fd074b1-2d7d-4e33-a51a-cdf8e6396155
-const bound = 5/2 * π
+const bound = 5 / 2 * π
 
 # ╔═╡ 309914e1-f602-4daf-a9b2-360e5cdf4db9
-const f = x -> begin	
-	xp = abs(x)
-	return xp > bound ? 0 : exp(-xp/4) * (sin(xp) + 1)
+const f = x -> begin
+    xp = abs(x)
+    return xp > bound ? 0 : exp(-xp / 4) * (sin(xp) + 1)
 end
 
 # ╔═╡ 2ea870d0-ede6-4d65-9149-08359a7c8a25
@@ -70,10 +70,10 @@ md"""
 """
 
 # ╔═╡ 35a2d5ab-ff2d-4eca-985b-022c70478e2f
-function dunno() 
-	IterTools.repeatedly(() -> rand(seed, Uniform(-bound, bound))) |>
-		Filter(u -> rand(seed, Uniform(0, 2)) < f(u)) |>
-		first
+function dunno()
+    IterTools.repeatedly(() -> rand(seed, Uniform(-bound, bound))) |>
+    Filter(u -> rand(seed, Uniform(0, 2)) < f(u)) |>
+    first
 end
 
 # ╔═╡ 6c34d924-1c8f-44d3-b3f1-31771ef2c6d5
@@ -81,11 +81,11 @@ const ys = IterTools.repeatedly(dunno, 100_000) |> collect
 
 # ╔═╡ e086b1f9-b2b2-43c7-9bf5-aeecb9356526
 begin
-	local A = 8.69336125
-	local xs = range(-bound, bound, 1_000)
-	histogram(ys, normalize = :pdf, label = "$(length(ys)) draws")
-	plot!(xs, x -> f(x) / A, lw = 2, color = :red, label = "analytical")
-	xlabel!("x")
+    local A = 8.69336125
+    local xs = range(-bound, bound, 1_000)
+    histogram(ys, normalize = :pdf, label = "$(length(ys)) draws")
+    plot!(xs, x -> f(x) / A, lw = 2, color = :red, label = "analytical")
+    xlabel!("x")
     ylabel!("P(x)")
 end
 
@@ -100,24 +100,22 @@ md"""
 
 # ╔═╡ 5d1ad6b3-fd01-401d-a66e-5d65d5b9294d
 begin
-	n = 1000
-	ds = IterTools.repeatedly(dunno, n) |> collect
-	μ = mean(ds)
-	σ = std(ds)
+    n = 1000
+    ds = IterTools.repeatedly(dunno, n) |> collect
+    μ = mean(ds)
+    σ = std(ds)
 end
 
 # ╔═╡ 86857496-fc82-4af6-aa3c-2d8c11a54dcb
-bootstrap = xs -> fn -> γ -> begin
-	local r0 = 25
-	local R = ceil(Int64, 2 * r0 / (1 - γ)) - 1
-	local ts =
-		IterTools.repeatedly(R) do
-			rand(seed, xs, length(xs)) |> fn
-		end |>
-			collect |>
-			sort
-	(ts[r0], ts[R + 1 - r0])
-end
+bootstrap =
+    xs -> fn -> γ -> begin
+        local r0 = 25
+        local R = ceil(Int64, 2 * r0 / (1 - γ)) - 1
+        local ts = IterTools.repeatedly(R) do
+            rand(seed, xs, length(xs)) |> fn
+        end |> collect |> sort
+        (ts[r0], ts[R+1-r0])
+    end
 
 # ╔═╡ 5960377c-d313-46e6-8826-e14e2c629bc5
 md"""
@@ -128,17 +126,17 @@ md"""
 
 # ╔═╡ ef94e713-5799-4da7-99ea-d74380ef98c8
 begin
-	local (μL, μU) = bootstrap(ds)(mean)(.99)
-	local (σL, σU) = bootstrap(ds)(std)(.99)
+    local (μL, μU) = bootstrap(ds)(mean)(0.99)
+    local (σL, σU) = bootstrap(ds)(std)(0.99)
 
-	Markdown.parse("""
-	```math
-	\\hat \\mu = $(μ) \\in [$(μL), $(μU)]
-	```
-	```math
-	\\hat \\sigma = $(σ) \\in [$(σL), $(σU)]
-	```
-	""")
+    Markdown.parse("""
+    ```math
+    \\hat \\mu = $(μ) \\in [$(μL), $(μU)]
+    ```
+    ```math
+    \\hat \\sigma = $(σ) \\in [$(σL), $(σU)]
+    ```
+    """)
 end
 
 # ╔═╡ 73774c4c-0dab-481a-b277-75cdb68cecad
@@ -159,23 +157,23 @@ md"""
 
 # ╔═╡ 3672eecb-2cfb-4217-a806-1066bd473f8a
 begin
-	local η = quantile.(Normal(), (1 + 0.99) / 2)
-	local δμ = η * σ / sqrt(n)
-	
-	local μL = μ - δμ
-	local μU = μ + δμ
+    local η = quantile.(Normal(), (1 + 0.99) / 2)
+    local δμ = η * σ / sqrt(n)
 
-	local σL = σ * sqrt((n - 1) / quantile.(Chisq(n - 1), (1 + 0.99) / 2))
-	local σU = σ * sqrt((n - 1) / quantile.(Chisq(n - 1), (1 - 0.99) / 2))
+    local μL = μ - δμ
+    local μU = μ + δμ
 
-	Markdown.parse("""
-	```math
-	\\hat \\mu = $(μ) \\in [$(μL), $(μU)]
-	```
-	```math
-	\\hat \\sigma = $(σ) \\in [$(σL), $(σU)]
-	```
-	""")
+    local σL = σ * sqrt((n - 1) / quantile.(Chisq(n - 1), (1 + 0.99) / 2))
+    local σU = σ * sqrt((n - 1) / quantile.(Chisq(n - 1), (1 - 0.99) / 2))
+
+    Markdown.parse("""
+    ```math
+    \\hat \\mu = $(μ) \\in [$(μL), $(μU)]
+    ```
+    ```math
+    \\hat \\sigma = $(σ) \\in [$(σL), $(σU)]
+    ```
+    """)
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001

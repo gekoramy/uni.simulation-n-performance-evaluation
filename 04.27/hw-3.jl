@@ -30,62 +30,63 @@ u \sim \left\lceil nq - z_{\frac {1 + \gamma} 2} \cdot \sqrt{nq (1 - q)} \right\
 
 # ╔═╡ 78b5db05-c394-496a-92c0-9e0ee5c8951f
 begin
-	local ss = sort(xs)
-	local n = length(xs)
-	local η = quantile.(Normal(), (1 + 0.95) / 2)
+    local ss = sort(xs)
+    local n = length(xs)
+    local η = quantile.(Normal(), (1 + 0.95) / 2)
 
-	local lower = q -> begin
-		floor(Int64, n * q - η * sqrt(n * q * (1 - q)))
-	end
+    local lower = q -> begin
+        floor(Int64, n * q - η * sqrt(n * q * (1 - q)))
+    end
 
-	local upper = q -> begin
-		ceil(Int64, n * q - η * sqrt(n * q * (1 - q))) + 1
-	end
+    local upper = q -> begin
+        ceil(Int64, n * q - η * sqrt(n * q * (1 - q))) + 1
+    end
 
-	const (q10, q25, q50, q75, q90) = quantile(ss, [.1, .25, .5, .75, .9], sorted = true)
+    const (q10, q25, q50, q75, q90) =
+        quantile(ss, [0.1, 0.25, 0.5, 0.75, 0.9], sorted = true)
 
-	# 1st quartile
-	
-	const q25L = ss[lower(1/4)]
-	const q25U = ss[upper(1/4)]
+    # 1st quartile
 
-	# 2nd quartile ~ median
+    const q25L = ss[lower(1 / 4)]
+    const q25U = ss[upper(1 / 4)]
 
-	const q50L = ss[lower(2/4)]
-	const q50U = ss[upper(2/4)]
+    # 2nd quartile ~ median
 
-	# 3rd quartile
+    const q50L = ss[lower(2 / 4)]
+    const q50U = ss[upper(2 / 4)]
 
-    const q75L = ss[lower(3/4)]
-	const q75U = ss[upper(3/4)]
+    # 3rd quartile
 
-	# 10th percentail
+    const q75L = ss[lower(3 / 4)]
+    const q75U = ss[upper(3 / 4)]
 
-    const q10L = ss[lower(1/10)]
-	const q10U = ss[upper(1/10)]
+    # 10th percentail
 
-	# 90th percentail
+    const q10L = ss[lower(1 / 10)]
+    const q10U = ss[upper(1 / 10)]
 
-    const q90L = ss[lower(9/10)]
-	const q90U = ss[upper(9/10)]
+    # 90th percentail
 
-	Markdown.parse("""
-	```math
-	D_{1} = $(q10) \\in [$(q10L), $(q10U)]
-	```
-	```math
-	Q_{1} = $(q25) \\in [$(q25L), $(q25U)]
-	```
-	```math
-	Q_{2} = $(q50) \\in [$(q50L), $(q50U)]
-	```
-	```math
-	Q_{3} = $(q75) \\in [$(q75L), $(q75U)]
-	```
-	```math
-	D_{9} = $(q90) \\in [$(q90L), $(q90U)]
-	```
-	""")
+    const q90L = ss[lower(9 / 10)]
+    const q90U = ss[upper(9 / 10)]
+
+    Markdown.parse("""
+    ```math
+    D_{1} = $(q10) \\in [$(q10L), $(q10U)]
+    ```
+    ```math
+    Q_{1} = $(q25) \\in [$(q25L), $(q25U)]
+    ```
+    ```math
+    Q_{2} = $(q50) \\in [$(q50L), $(q50U)]
+    ```
+    ```math
+    Q_{3} = $(q75) \\in [$(q75L), $(q75U)]
+    ```
+    ```math
+    D_{9} = $(q90) \\in [$(q90L), $(q90U)]
+    ```
+    """)
 end
 
 # ╔═╡ 179672cb-f529-406f-a60f-943dd9fda563
@@ -102,13 +103,13 @@ end
 
 # ╔═╡ ebad8bb4-ab82-49b8-89d7-450555024081
 begin
-	plot(sort(xs), cdfy(xs), label = "ECDF")
-	vline!([q10], label = "D1")
-	vline!([q25], label = "Q1")
-	vline!([q50], label = "Q2")
-	vline!([q75], label = "Q3")
-	vline!([q90], label = "D9")
-	xlabel!("x")
+    plot(sort(xs), cdfy(xs), label = "ECDF")
+    vline!([q10], label = "D1")
+    vline!([q25], label = "Q1")
+    vline!([q50], label = "Q2")
+    vline!([q75], label = "Q3")
+    vline!([q90], label = "D9")
+    xlabel!("x")
     ylabel!("P(X > x)")
 end
 
