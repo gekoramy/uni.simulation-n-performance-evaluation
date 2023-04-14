@@ -85,8 +85,8 @@ l_i = \frac{X_{(1)} + \ldots + X_{(i)}}{n \hat \mu}
 
 # ╔═╡ a394eec7-bbcf-4a95-8018-dd1217e81669
 begin
-    const lc = xs′ -> begin
-        local ss = sort(xs′)
+    const lc = xs -> begin
+        local ss = sort(xs)
         cumsum(ss) / (length(ss) * mean(ss))
     end
     plot((1:n) / n, lc(xs), label = "Lorenz curve")
@@ -102,9 +102,8 @@ md"""
 
 # ╔═╡ cf6385e0-2457-47c9-8758-1d921a945a3c
 begin
-    const jfi = xs′ -> begin
-        local n′ = length(xs′)
-        sum(xs′)^2 / (n′ * sum(map(x -> x^2, xs′)))
+    const jfi = xs -> begin
+        sum(xs)^2 / (length(xs) * sum(map(x -> x^2, xs)))
     end
     jfi(xs)
 end
