@@ -124,18 +124,22 @@ md"""
 """
 
 # ╔═╡ 86857496-fc82-4af6-aa3c-2d8c11a54dcb
-rss = xs -> fn -> begin
-	IterTools.repeatedly(999) do
+bootstrap = xs -> fn -> γ -> begin
+	local r0 = 25
+	local R = ceil(Int64, 2 * r0 / (1 - γ)) - 1
+	local ts =
+		IterTools.repeatedly(R) do
 			rand(seed, xs, length(xs)) |> fn
 		end |>
-		collect |>
-		sort
+			collect |>
+			sort
+	(ts[r0], ts[R + 1 - r0])
 end
 
 # ╔═╡ ef94e713-5799-4da7-99ea-d74380ef98c8
 begin
-	local (μ99L, μ99U) = rss(xs)(mean) |> rs -> (rs[1], rs[999])
-	local (μ95L, μ95U) = rss(xs)(mean) |> rs -> (rs[25], rs[975])	
+	local (μ99L, μ99U) = bootstrap(xs)(mean)(.99)
+	local (μ95L, μ95U) = bootstrap(xs)(mean)(.95)
 
 	Markdown.parse("""
 	```math
@@ -146,8 +150,8 @@ end
 
 # ╔═╡ 2531987e-37e8-4fa9-8039-92e85c78268d
 begin
-	local (σ99L, σ99U) = rss(xs)(std) |> rs -> (rs[1], rs[999])
-	local (σ95L, σ95U) = rss(xs)(std) |> rs -> (rs[25], rs[975])
+	local (σ99L, σ99U) = bootstrap(xs)(std)(.99)
+	local (σ95L, σ95U) = bootstrap(xs)(std)(.95)
 
 	Markdown.parse("""
 	```math
@@ -158,8 +162,8 @@ end
 
 # ╔═╡ 427cdc2a-fd50-49cf-aa67-56f7083fd913
 begin
-	local (gap99L, gap99U) = rss(xs)(lcg) |> rs -> (rs[1], rs[999])
-	local (gap95L, gap95U) = rss(xs)(lcg) |> rs -> (rs[25], rs[975])	
+	local (gap99L, gap99U) = bootstrap(xs)(lcg)(.99)
+	local (gap95L, gap95U) = bootstrap(xs)(lcg)(.95)
 
 	Markdown.parse("""
 	```math
@@ -170,8 +174,8 @@ end
 
 # ╔═╡ debfe214-d948-4317-aa1e-b00c4c7d6a90
 begin
-	local (jfi99L, jfi99U) = rss(xs)(jfi) |> rs -> (rs[1], rs[999])
-	local (jfi95L, jfi95U) = rss(xs)(jfi) |> rs -> (rs[25], rs[975])
+	local (jfi99L, jfi99U) = bootstrap(xs)(jfi)(.99)
+	local (jfi95L, jfi95U) = bootstrap(xs)(jfi)(.95)
 
 	Markdown.parse("""
 	```math

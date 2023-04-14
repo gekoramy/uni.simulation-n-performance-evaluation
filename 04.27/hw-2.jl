@@ -107,12 +107,16 @@ begin
 end
 
 # ╔═╡ 86857496-fc82-4af6-aa3c-2d8c11a54dcb
-rss = xs -> fn -> begin
-	IterTools.repeatedly(999) do
+bootstrap = xs -> fn -> γ -> begin
+	local r0 = 25
+	local R = ceil(Int64, 2 * r0 / (1 - γ)) - 1
+	local ts =
+		IterTools.repeatedly(R) do
 			rand(seed, xs, length(xs)) |> fn
 		end |>
-		collect |>
-		sort
+			collect |>
+			sort
+	(ts[r0], ts[R + 1 - r0])
 end
 
 # ╔═╡ 5960377c-d313-46e6-8826-e14e2c629bc5
@@ -124,13 +128,8 @@ md"""
 
 # ╔═╡ ef94e713-5799-4da7-99ea-d74380ef98c8
 begin
-	local μ_rss = rss(ds)(mean)
-	local μL = first(μ_rss)
-	local μU = last(μ_rss)
-	
-	local σ_rss = rss(ds)(std)
-	local σL = first(σ_rss)
-	local σU = last(σ_rss)
+	local (μL, μU) = bootstrap(ds)(mean)(.99)
+	local (σL, σU) = bootstrap(ds)(std)(.99)
 
 	Markdown.parse("""
 	```math
