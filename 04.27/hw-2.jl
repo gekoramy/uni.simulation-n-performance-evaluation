@@ -5,7 +5,7 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ f7cd7ba0-da1a-11ed-065a-e71f388cf107
-using Random, Plots, Transducers, IterTools, Distributions
+using Random, Plots, Transducers, IterTools, Distributions, Printf
 
 # ╔═╡ 8d70ecc8-6dd2-461b-8a01-a56ca2344f49
 md"""
@@ -18,18 +18,21 @@ md"""
 	f(x) = \frac 1 A e^{-\frac{|x|}{4}} \left( \sin(|x|) + 1 \right) \qquad x \in \left[-\frac 5 2 \pi, \frac 5 2 \pi\right]
 	```
 
-	where ``A = 8.69336125`` is a normalization factor such that 
+	where ``A = 8.69336125`` is a normalization factor such that
 	```math
 	\int_{-\frac 5 2 \pi}^{\frac 5 2 \pi} f(t) \,{\rm d}t = 1
 	```
 	so ``f(x)`` is in fact a PDF. (Question: do you really need to know the value of ``A``?)
 
 	1. Employ rejection sampling to draw a large number of samples from the above PDF.
-	
+
 	2. Plot the resulting empirical PDF (e.g., through a histogram) and compare it against the theoretical PDF. Make sure you draw a sufficiently large number of samples, so that the histogram convincingly fits the theoretical PDF.
 
 	3. Take 1000 draws from the above distribution. Apply the bootstrap procedure of Exercise 1 to compute a 99% confidence interval for the mean and standard deviation of the dataset you drew.
 """
+
+# ╔═╡ d02ea6a2-0f5b-4f74-afcf-b3d25e149a18
+const s(x::Real)::String = @sprintf("%.5f", x)
 
 # ╔═╡ e8760ff4-a8e8-49f3-9896-b0140e4f7e57
 md"""
@@ -54,7 +57,7 @@ const seed = Random.Xoshiro(3)
 md"""
 !!! note
 
-	There is no need to pdfy ``f``
+    To implement rejection sampling algorithm there is no need for ``f(x)`` to be a PDF
 
 	Explain why
 
@@ -65,19 +68,20 @@ md"""
 	```math
 		\forall x. f(x) < 2
 	```
-	
-	Can we pick a better - i.e., smaller - ceil? 
+
+	Can we pick a better - i.e., smaller - ceil?
 """
 
 # ╔═╡ 35a2d5ab-ff2d-4eca-985b-022c70478e2f
-function dunno()
-    IterTools.repeatedly(() -> rand(seed, Uniform(-bound, bound))) |>
-    Filter(u -> rand(seed, Uniform(0, 2)) < f(u)) |>
-    first
-end
+const rejectiong_sampling =
+    fn -> () -> begin
+        IterTools.repeatedly(() -> rand(seed, Uniform(-bound, bound))) |>
+        Filter(u -> rand(seed, Uniform(0, 2)) < fn(u)) |>
+        first
+    end
 
 # ╔═╡ 6c34d924-1c8f-44d3-b3f1-31771ef2c6d5
-const ys = IterTools.repeatedly(dunno, 100_000) |> collect
+const ys = IterTools.repeatedly(rejectiong_sampling(f), 100_000) |> collect
 
 # ╔═╡ e086b1f9-b2b2-43c7-9bf5-aeecb9356526
 begin
@@ -101,19 +105,35 @@ md"""
 # ╔═╡ 5d1ad6b3-fd01-401d-a66e-5d65d5b9294d
 begin
     n = 1000
-    ds = IterTools.repeatedly(dunno, n) |> collect
+    ds = IterTools.repeatedly(rejectiong_sampling(f), n) |> collect
     μ = mean(ds)
     σ = std(ds)
+    (μ, σ)
 end
+
+# ╔═╡ 1e35a93e-1260-42ad-8f1f-fe6d58ffb1a1
+md"""
+```math
+r_0 = 25
+\qquad
+R = \left\lceil \frac {2 \cdot r_0} { 1 - \gamma } \right\rceil - 1
+```
+```math
+[T_{(r_0)}, T_{(R + 1 - r_0)}]
+```
+"""
 
 # ╔═╡ 86857496-fc82-4af6-aa3c-2d8c11a54dcb
 bootstrap =
     xs -> fn -> γ -> begin
         local r0 = 25
         local R = ceil(Int64, 2 * r0 / (1 - γ)) - 1
-        local ts = IterTools.repeatedly(R) do
-            rand(seed, xs, length(xs)) |> fn
-        end |> collect |> sort
+        local ts =
+            1:R |>
+            Map(_ -> rand(seed, xs, length(xs))) |>
+            Map(fn) |>
+            collect |>
+            sort
         (ts[r0], ts[R+1-r0])
     end
 
@@ -131,10 +151,10 @@ begin
 
     Markdown.parse("""
     ```math
-    \\hat \\mu = $(μ) \\in [$(μL), $(μU)]
+    \\hat \\mu = $(s(μ)) \\in [$(s(μL)), $(s(μU))]
     ```
     ```math
-    \\hat \\sigma = $(σ) \\in [$(σL), $(σU)]
+    \\hat \\sigma = $(s(σ)) \\in [$(s(σL)), $(s(σU))]
     ```
     """)
 end
@@ -168,10 +188,10 @@ begin
 
     Markdown.parse("""
     ```math
-    \\hat \\mu = $(μ) \\in [$(μL), $(μU)]
+    \\hat \\mu = $(s(μ)) \\in [$(s(μL)), $(s(μU))]
     ```
     ```math
-    \\hat \\sigma = $(σ) \\in [$(σL), $(σU)]
+    \\hat \\sigma = $(s(σ)) \\in [$(s(σL)), $(s(σU))]
     ```
     """)
 end
@@ -182,6 +202,7 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 IterTools = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Transducers = "28d57a85-8fef-5791-bfe6-a80928e7c999"
 
@@ -198,7 +219,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.5"
 manifest_format = "2.0"
-project_hash = "2ddb91706895d2483edac805d803f0d961287a98"
+project_hash = "be20d22411b143b33668a47fb160aa76ef573f13"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
@@ -1304,6 +1325,7 @@ version = "1.4.1+0"
 # ╔═╡ Cell order:
 # ╠═f7cd7ba0-da1a-11ed-065a-e71f388cf107
 # ╟─8d70ecc8-6dd2-461b-8a01-a56ca2344f49
+# ╠═d02ea6a2-0f5b-4f74-afcf-b3d25e149a18
 # ╟─e8760ff4-a8e8-49f3-9896-b0140e4f7e57
 # ╠═3fd074b1-2d7d-4e33-a51a-cdf8e6396155
 # ╠═309914e1-f602-4daf-a9b2-360e5cdf4db9
@@ -1314,6 +1336,7 @@ version = "1.4.1+0"
 # ╠═e086b1f9-b2b2-43c7-9bf5-aeecb9356526
 # ╟─b25b3b96-8063-4084-be12-da675fa97a5d
 # ╠═5d1ad6b3-fd01-401d-a66e-5d65d5b9294d
+# ╟─1e35a93e-1260-42ad-8f1f-fe6d58ffb1a1
 # ╠═86857496-fc82-4af6-aa3c-2d8c11a54dcb
 # ╟─5960377c-d313-46e6-8826-e14e2c629bc5
 # ╠═ef94e713-5799-4da7-99ea-d74380ef98c8

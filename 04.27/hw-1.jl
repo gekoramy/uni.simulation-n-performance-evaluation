@@ -5,7 +5,7 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ f7cd7ba0-da1a-11ed-065a-e71f388cf107
-using Random, Plots, Transducers, IterTools, Distributions, DelimitedFiles
+using Random, Plots, Transducers, IterTools, Distributions, DelimitedFiles, Printf
 
 # ╔═╡ dda0feea-1db6-4c7b-8237-65bcdd5888bd
 md"""
@@ -13,7 +13,7 @@ md"""
 
 !!! task
 
-	Load the data from the CSV file `data_ex1.scv`
+	Load the data from the CSV file `data_ex1.csv`
 
 	1. Compute the coefficient of variation (CoV) for the data, Jain's fairness index and the Lorenz curve gap
 
@@ -31,18 +31,21 @@ md"""
 	5. Compare the obtained confidence interval for the mean with the one obtained via the asymptotic formulas and discuss the results
 """
 
+# ╔═╡ dbef143d-1813-4ba6-85fb-96102352c139
+const s(x::Real)::String = @sprintf("%.5f", x)
+
 # ╔═╡ 477749dd-7a7a-4987-b581-060ab29984ad
 const seed = Random.Xoshiro(3)
 
 # ╔═╡ c780d252-40cc-413e-aea1-3595a87fa13c
-const xs = readdlm("data_ex1.csv", '\n', Float64)[1:end]
+const xs = readdlm("data_ex1.csv", '\n', Float64) |> vec
 
 # ╔═╡ b25b3b96-8063-4084-be12-da675fa97a5d
 md"""
 ```math
 \hat \mu = \frac 1 n \sum_i X_i
 \qquad
-\hat \sigma^2 = \frac 1 {n - 1} \sum_i (X_i - \hat \mu)^2
+\hat \sigma = \sqrt{\frac 1 {n - 1} \sum_i (X_i - \hat \mu)^2}
 \qquad
 \text{CoV} = \frac {\hat \sigma} {\hat \mu}
 ```
@@ -90,7 +93,7 @@ begin
         cumsum(ss) / (length(ss) * mean(ss))
     end
     plot((1:n) / n, lc(xs), label = "Lorenz curve")
-    plot!([0, 1], [0, 1], label = "Perfect equality")
+    plot!([0, 1], [0, 1], label = "Perfect equality", linestyle = :dash)
 end
 
 # ╔═╡ 519c9a52-0283-46f5-8d59-27d986efe602
@@ -122,14 +125,29 @@ md"""
     Bootstrap procedure for ``\hat \mu, \hat \sigma, {\rm gap}, {\rm JFI}``
 """
 
+# ╔═╡ c4be1d8d-d65d-4474-99ef-860d35fb3396
+md"""
+```math
+r_0 = 25
+\qquad
+R = \left\lceil \frac {2 \cdot r_0} { 1 - \gamma } \right\rceil - 1
+```
+```math
+[T_{(r_0)}, T_{(R + 1 - r_0)}]
+```
+"""
+
 # ╔═╡ 86857496-fc82-4af6-aa3c-2d8c11a54dcb
 bootstrap =
     xs -> fn -> γ -> begin
         local r0 = 25
         local R = ceil(Int64, 2 * r0 / (1 - γ)) - 1
-        local ts = IterTools.repeatedly(R) do
-            rand(seed, xs, length(xs)) |> fn
-        end |> collect |> sort
+        local ts =
+            1:R |>
+            Map(_ -> rand(seed, xs, length(xs))) |>
+            Map(fn) |>
+            collect |>
+            sort
         (ts[r0], ts[R+1-r0])
     end
 
@@ -140,7 +158,7 @@ begin
 
     Markdown.parse("""
     ```math
-    \\hat \\mu = $(μ) \\in [$(μ95L), $(μ95U)] \\subset [$(μ99L), $(μ99U)]
+    \\hat \\mu = $(s(μ)) \\in [$(s(μ95L)), $(s(μ95U))] \\subset [$(s(μ99L)), $(s(μ99U))]
     ```
     """)
 end
@@ -152,7 +170,7 @@ begin
 
     Markdown.parse("""
     ```math
-    \\hat \\sigma = $(σ) \\in [$(σ95L), $(σ95U)] \\subset [$(σ99L), $(σ95U)]
+    \\hat \\sigma = $(s(σ)) \\in [$(s(σ95L)), $(s(σ95U))] \\subset [$(s(σ99L)), $(s(σ95U))]
     ```
     """)
 end
@@ -164,7 +182,7 @@ begin
 
     Markdown.parse("""
     ```math
-    { \\rm gap } = $(gap) \\in [$(gap95L), $(gap95U)] \\subset [$(gap99L), $(gap99U)]
+    { \\rm gap } = $(s(gap)) \\in [$(s(gap95L)), $(s(gap95U))] \\subset [$(s(gap99L)), $(s(gap99U))]
     ```
     """)
 end
@@ -176,7 +194,7 @@ begin
 
     Markdown.parse("""
     ```math
-    { \\rm JFI} = $(jfi(xs)) \\in [$(jfi95L), $(jfi95U)] \\subset [$(jfi99L), $(jfi99U)]
+    { \\rm JFI} = $(s(jfi(xs))) \\in [$(s(jfi95L)), $(s(jfi95U))] \\subset [$(s(jfi99L)), $(s(jfi99U))]
     ```
     """)
 end
@@ -211,7 +229,7 @@ begin
 
     Markdown.parse("""
     ```math
-    \\hat \\mu = $(μ) \\in [$(μL95), $(μU95)] \\subset [$(μL99), $(μU99)]
+    \\hat \\mu = $(s(μ)) \\in [$(s(μL95)), $(s(μU95))] \\subset [$(s(μL99)), $(s(μU99))]
     ```
     """)
 end
@@ -237,6 +255,7 @@ DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 IterTools = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Transducers = "28d57a85-8fef-5791-bfe6-a80928e7c999"
 
@@ -253,7 +272,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.5"
 manifest_format = "2.0"
-project_hash = "a3794f81b4458ce9ecc8e70dad3238c0dc343753"
+project_hash = "8696f60b8c10ed6d9672b579c74ea5dbeeab1500"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
@@ -1359,6 +1378,7 @@ version = "1.4.1+0"
 # ╔═╡ Cell order:
 # ╠═f7cd7ba0-da1a-11ed-065a-e71f388cf107
 # ╟─dda0feea-1db6-4c7b-8237-65bcdd5888bd
+# ╠═dbef143d-1813-4ba6-85fb-96102352c139
 # ╠═477749dd-7a7a-4987-b581-060ab29984ad
 # ╠═c780d252-40cc-413e-aea1-3595a87fa13c
 # ╟─b25b3b96-8063-4084-be12-da675fa97a5d
@@ -1371,6 +1391,7 @@ version = "1.4.1+0"
 # ╠═cf6385e0-2457-47c9-8758-1d921a945a3c
 # ╟─64b9e905-600f-4db2-b2c6-3a20e2fa82f5
 # ╟─5960377c-d313-46e6-8826-e14e2c629bc5
+# ╟─c4be1d8d-d65d-4474-99ef-860d35fb3396
 # ╠═86857496-fc82-4af6-aa3c-2d8c11a54dcb
 # ╠═ef94e713-5799-4da7-99ea-d74380ef98c8
 # ╠═2531987e-37e8-4fa9-8039-92e85c78268d

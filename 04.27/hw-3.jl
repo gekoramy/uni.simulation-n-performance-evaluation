@@ -5,7 +5,7 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ 40b8c21a-da33-11ed-1b55-65f7950bd35e
-using Random, Plots, Transducers, IterTools, Distributions, DelimitedFiles
+using Random, Plots, Transducers, IterTools, Distributions, DelimitedFiles, Printf
 
 # ╔═╡ 24518d88-be29-4240-9c22-9093ca315ce2
 md"""
@@ -16,8 +16,11 @@ md"""
 	Load the iid data samples from the CSV file `data_ex3.csv` and provide the value of all quartiles, and of the 10th and 90th percentiles of the data, along with a 95% confidence interval for all of them.
 """
 
+# ╔═╡ dd9519ee-894d-435e-adc1-e2d56c1c98f8
+const s(x::Real)::String = @sprintf("%.5f", x)
+
 # ╔═╡ 6f4a10af-1e97-4f42-b2ef-3718ee3e386e
-const xs = readdlm("data_ex3.csv", ',', Float64)[1:end]
+const xs = readdlm("data_ex3.csv", ',', Float64) |> vec
 
 # ╔═╡ 1ad1a1f8-c0aa-41ba-bf33-e18d428d7a63
 md"""
@@ -74,19 +77,19 @@ begin
 
     Markdown.parse("""
     ```math
-    D_{1} = $(q10) \\in [$(q10L), $(q10U)]
+    D_{1} = $(s(q10)) \\in [$(s(q10L)), $(s(q10U))]
     ```
     ```math
-    Q_{1} = $(q25) \\in [$(q25L), $(q25U)]
+    Q_{1} = $(s(q25)) \\in [$(s(q25L)), $(s(q25U))]
     ```
     ```math
-    Q_{2} = $(q50) \\in [$(q50L), $(q50U)]
+    Q_{2} = $(s(q50)) \\in [$(s(q50L)), $(s(q50U))]
     ```
     ```math
-    Q_{3} = $(q75) \\in [$(q75L), $(q75U)]
+    Q_{3} = $(s(q75)) \\in [$(s(q75L)), $(s(q75U))]
     ```
     ```math
-    D_{9} = $(q90) \\in [$(q90L), $(q90U)]
+    D_{9} = $(s(q90)) \\in [$(s(q90L)), $(s(q90U))]
     ```
     """)
 end
@@ -130,6 +133,7 @@ DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 IterTools = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Transducers = "28d57a85-8fef-5791-bfe6-a80928e7c999"
 
@@ -146,7 +150,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.5"
 manifest_format = "2.0"
-project_hash = "a3794f81b4458ce9ecc8e70dad3238c0dc343753"
+project_hash = "8696f60b8c10ed6d9672b579c74ea5dbeeab1500"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
@@ -1252,6 +1256,7 @@ version = "1.4.1+0"
 # ╔═╡ Cell order:
 # ╠═40b8c21a-da33-11ed-1b55-65f7950bd35e
 # ╟─24518d88-be29-4240-9c22-9093ca315ce2
+# ╠═dd9519ee-894d-435e-adc1-e2d56c1c98f8
 # ╠═6f4a10af-1e97-4f42-b2ef-3718ee3e386e
 # ╟─1ad1a1f8-c0aa-41ba-bf33-e18d428d7a63
 # ╠═78b5db05-c394-496a-92c0-9e0ee5c8951f
