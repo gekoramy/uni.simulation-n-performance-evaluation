@@ -31,84 +31,83 @@ md"""
 	3. Take 1000 draws from the above distribution. Apply the bootstrap procedure of Exercise 1 to compute a 99% confidence interval for the mean and standard deviation of the dataset you drew.
 """
 
+# ╔═╡ 2ea870d0-ede6-4d65-9149-08359a7c8a25
+const seed = Random.Xoshiro(3)
+
 # ╔═╡ d02ea6a2-0f5b-4f74-afcf-b3d25e149a18
-const s(x::Real)::String = @sprintf("%.5f", x)
+const sp(x::Real)::String = @sprintf("%.5f", x)
 
 # ╔═╡ e8760ff4-a8e8-49f3-9896-b0140e4f7e57
 md"""
 ```math
-f(x) = \frac 1 A e^{-\frac{|x|}{4}} \left( \sin(|x|) + 1 \right) \qquad x \in \left[-\frac 5 2 \pi, \frac 5 2 \pi\right]
+f(x) = \frac 1 A f^\prime(x)
+\qquad
+x \in \left[-\frac 5 2 \pi, \frac 5 2 \pi\right]
+```
+
+```math
+f^\prime(x) = e^{-\frac{|x|}{4}} \left( \sin(|x|) + 1 \right)
 ```
 """
 
-# ╔═╡ 3fd074b1-2d7d-4e33-a51a-cdf8e6396155
-const bound = 5 / 2 * π
-
 # ╔═╡ 309914e1-f602-4daf-a9b2-360e5cdf4db9
-const f = x -> begin
-    xp = abs(x)
-    return xp > bound ? 0 : exp(-xp / 4) * (sin(xp) + 1)
+begin
+    const bound = 5 / 2 * π
+    const M = 1.5
+    const f = x -> begin
+        A = 8.69336125
+        return -bound <= x && x <= bound ? f′(x) / A : 0
+    end
+    const f′ = x -> begin
+        xp = abs(x)
+        return exp(-xp / 4) * (sin(xp) + 1)
+    end
 end
 
-# ╔═╡ 2ea870d0-ede6-4d65-9149-08359a7c8a25
-const seed = Random.Xoshiro(3)
-
 # ╔═╡ 91ecd697-0c85-4649-97ea-262ed1d43962
-md"""
-!!! note
+Markdown.parse("""
+To implement rejection sampling algorithm we do **not** need to know the multiplicative normalization constant ``A``.
 
-    To implement rejection sampling algorithm there is no need for ``f(x)`` to be a PDF
+In our case, we have ``M = $M`` such that
 
-	Explain why
+```math
+\\forall x \\in \\left[-\\frac 5 2 \\pi, \\frac 5 2 \\pi\\right]. \\quad f^\\prime(x) < M
+```
+""",
+)
 
-!!! warning
-
-    For rejection sampling ``U(0, 2)`` is ok because
-
-	```math
-		\forall x. f(x) < 2
-	```
-
-	Can we pick a better - i.e., smaller - ceil?
-"""
+# ╔═╡ e4db1c88-85a7-45f5-b3a1-f6ae9572cbe0
+begin
+    local xs = range(-bound, bound, 1_000)
+    plot(xs, f′, lw = 2, color = :red, label = "f′(x)")
+    hline!([M], color = :blue, label = "M")
+    xlabel!("x")
+    ylabel!("y")
+end
 
 # ╔═╡ 35a2d5ab-ff2d-4eca-985b-022c70478e2f
-const rejectiong_sampling =
-    fn -> () -> begin
-        IterTools.repeatedly(() -> rand(seed, Uniform(-bound, bound))) |>
-        Filter(u -> rand(seed, Uniform(0, 2)) < fn(u)) |>
-        first
-    end
+function rejectiong_sampling()
+    IterTools.repeatedly(() -> rand(seed, Uniform(-bound, bound))) |>
+    Filter(u -> rand(seed, Uniform(0, M)) < f′(u)) |>
+    first
+end
 
 # ╔═╡ 6c34d924-1c8f-44d3-b3f1-31771ef2c6d5
-const ys = IterTools.repeatedly(rejectiong_sampling(f), 100_000) |> collect
+const ys = IterTools.repeatedly(rejectiong_sampling, 100_000) |> collect
 
 # ╔═╡ e086b1f9-b2b2-43c7-9bf5-aeecb9356526
 begin
-    local A = 8.69336125
     local xs = range(-bound, bound, 1_000)
     histogram(ys, normalize = :pdf, label = "$(length(ys)) draws")
-    plot!(xs, x -> f(x) / A, lw = 2, color = :red, label = "analytical")
+    plot!(xs, f, lw = 2, color = :red, label = "f(x)")
     xlabel!("x")
     ylabel!("P(x)")
 end
 
-# ╔═╡ b25b3b96-8063-4084-be12-da675fa97a5d
-md"""
-```math
-\hat \mu = \frac 1 n \sum_i X_i
-\qquad
-\hat \sigma^2 = \frac 1 {n - 1} \sum_i (X_i - \hat \mu)^2
-```
-"""
-
 # ╔═╡ 5d1ad6b3-fd01-401d-a66e-5d65d5b9294d
 begin
-    n = 1000
-    ds = IterTools.repeatedly(rejectiong_sampling(f), n) |> collect
-    μ = mean(ds)
-    σ = std(ds)
-    (μ, σ)
+    const n = 1000
+    const ds = IterTools.repeatedly(rejectiong_sampling, n) |> collect
 end
 
 # ╔═╡ 1e35a93e-1260-42ad-8f1f-fe6d58ffb1a1
@@ -124,7 +123,7 @@ R = \left\lceil \frac {2 \cdot r_0} { 1 - \gamma } \right\rceil - 1
 """
 
 # ╔═╡ 86857496-fc82-4af6-aa3c-2d8c11a54dcb
-bootstrap =
+const bootstrap =
     xs -> fn -> γ -> begin
         local r0 = 25
         local R = ceil(Int64, 2 * r0 / (1 - γ)) - 1
@@ -137,61 +136,28 @@ bootstrap =
         (ts[r0], ts[R+1-r0])
     end
 
-# ╔═╡ 5960377c-d313-46e6-8826-e14e2c629bc5
+# ╔═╡ b25b3b96-8063-4084-be12-da675fa97a5d
 md"""
-!!! note
-
-    Bootstrap procedure for ``\hat \mu, \hat \sigma``
+```math
+\hat \mu = \frac 1 n \sum_i X_i
+\qquad
+\hat \sigma^2 = \frac 1 {n - 1} \sum_i (X_i - \hat \mu)^2
+```
 """
 
 # ╔═╡ ef94e713-5799-4da7-99ea-d74380ef98c8
 begin
+    local μ = mean(ds)
+    local σ = std(ds)
     local (μL, μU) = bootstrap(ds)(mean)(0.99)
     local (σL, σU) = bootstrap(ds)(std)(0.99)
 
     Markdown.parse("""
     ```math
-    \\hat \\mu = $(s(μ)) \\in [$(s(μL)), $(s(μU))]
+    \\hat \\mu = $(sp(μ)) \\in [$(sp(μL)), $(sp(μU))]
     ```
     ```math
-    \\hat \\sigma = $(s(σ)) \\in [$(s(σL)), $(s(σU))]
-    ```
-    """)
-end
-
-# ╔═╡ 73774c4c-0dab-481a-b277-75cdb68cecad
-md"""
-!!! warning
-
-    Asymptotic procedure for ``\hat \mu, \hat \sigma``
-"""
-
-# ╔═╡ 2a2cca5d-f805-447a-8d23-fc8e388266e5
-md"""
-```math
-	\hat \mu \pm z_{\frac {1 + \gamma} 2} \frac {\hat \sigma} {\sqrt n}
-	\qquad
-	\left[\hat \sigma \sqrt{ \frac {n - 1} { \chi^2_{n - 1, \frac {1 - \gamma} 2} } } , \hat \sigma \sqrt{ \frac {n - 1} { \chi^2_{n - 1, \frac {1 + \gamma} 2} } } \right]
-```
-"""
-
-# ╔═╡ 3672eecb-2cfb-4217-a806-1066bd473f8a
-begin
-    local η = quantile.(Normal(), (1 + 0.99) / 2)
-    local δμ = η * σ / sqrt(n)
-
-    local μL = μ - δμ
-    local μU = μ + δμ
-
-    local σL = σ * sqrt((n - 1) / quantile.(Chisq(n - 1), (1 + 0.99) / 2))
-    local σU = σ * sqrt((n - 1) / quantile.(Chisq(n - 1), (1 - 0.99) / 2))
-
-    Markdown.parse("""
-    ```math
-    \\hat \\mu = $(s(μ)) \\in [$(s(μL)), $(s(μU))]
-    ```
-    ```math
-    \\hat \\sigma = $(s(σ)) \\in [$(s(σL)), $(s(σU))]
+    \\hat \\sigma = $(sp(σ)) \\in [$(sp(σL)), $(sp(σU))]
     ```
     """)
 end
@@ -219,7 +185,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.5"
 manifest_format = "2.0"
-project_hash = "be20d22411b143b33668a47fb160aa76ef573f13"
+project_hash = "d3c4653f15169aaea1f9a4dfa3cfe5c5af17bbb1"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
@@ -1325,23 +1291,19 @@ version = "1.4.1+0"
 # ╔═╡ Cell order:
 # ╠═f7cd7ba0-da1a-11ed-065a-e71f388cf107
 # ╟─8d70ecc8-6dd2-461b-8a01-a56ca2344f49
+# ╠═2ea870d0-ede6-4d65-9149-08359a7c8a25
 # ╠═d02ea6a2-0f5b-4f74-afcf-b3d25e149a18
 # ╟─e8760ff4-a8e8-49f3-9896-b0140e4f7e57
-# ╠═3fd074b1-2d7d-4e33-a51a-cdf8e6396155
 # ╠═309914e1-f602-4daf-a9b2-360e5cdf4db9
-# ╠═2ea870d0-ede6-4d65-9149-08359a7c8a25
 # ╟─91ecd697-0c85-4649-97ea-262ed1d43962
+# ╠═e4db1c88-85a7-45f5-b3a1-f6ae9572cbe0
 # ╠═35a2d5ab-ff2d-4eca-985b-022c70478e2f
 # ╠═6c34d924-1c8f-44d3-b3f1-31771ef2c6d5
 # ╠═e086b1f9-b2b2-43c7-9bf5-aeecb9356526
-# ╟─b25b3b96-8063-4084-be12-da675fa97a5d
 # ╠═5d1ad6b3-fd01-401d-a66e-5d65d5b9294d
 # ╟─1e35a93e-1260-42ad-8f1f-fe6d58ffb1a1
 # ╠═86857496-fc82-4af6-aa3c-2d8c11a54dcb
-# ╟─5960377c-d313-46e6-8826-e14e2c629bc5
+# ╟─b25b3b96-8063-4084-be12-da675fa97a5d
 # ╠═ef94e713-5799-4da7-99ea-d74380ef98c8
-# ╟─73774c4c-0dab-481a-b277-75cdb68cecad
-# ╟─2a2cca5d-f805-447a-8d23-fc8e388266e5
-# ╠═3672eecb-2cfb-4217-a806-1066bd473f8a
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
