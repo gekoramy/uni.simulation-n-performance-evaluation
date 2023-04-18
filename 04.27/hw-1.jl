@@ -13,32 +13,41 @@ md"""
 
 !!! task
 
-	Load the data from the CSV file `data_ex1.csv`
+    Load the data from the CSV file `data_ex1.csv`
 
-	1. Compute the coefficient of variation (CoV) for the data, Jain's fairness index and the Lorenz curve gap
+    1. Compute the coefficient of variation (CoV) for the data, Jain's fairness index and the Lorenz curve gap
 
-	2. Discuss the source of the difference between the Lorenz curve gap and Jain's fairness index
+    2. Discuss the source of the difference between the Lorenz curve gap and Jain's fairness index
 
-	3. Implement the bootstrap algorithm seen in class
+    3. Implement the bootstrap algorithm seen in class
 
-	4. Use bootstrap to compute 95% and 99% confidente intervals for:
+    4. Use bootstrap to compute 95% and 99% confidente intervals for:
 
-	- the mean of the data;
-	- the standard deviation of the data;
-	- the Lorenz curve gap;
-	- Jain's fairness index;
+    - the mean of the data;
+    - the standard deviation of the data;
+    - the Lorenz curve gap;
+    - Jain's fairness index;
 
-	5. Compare the obtained confidence interval for the mean with the one obtained via the asymptotic formulas and discuss the results
+    5. Compare the obtained confidence interval for the mean with the one obtained via the asymptotic formulas and discuss the results
 """
 
 # ╔═╡ dbef143d-1813-4ba6-85fb-96102352c139
-const s(x::Real)::String = @sprintf("%.5f", x)
+const sp(x::Real)::String = @sprintf("%.5f", x)
 
 # ╔═╡ 477749dd-7a7a-4987-b581-060ab29984ad
 const seed = Random.Xoshiro(3)
 
 # ╔═╡ c780d252-40cc-413e-aea1-3595a87fa13c
 const xs = readdlm("data_ex1.csv", '\n', Float64) |> vec
+
+# ╔═╡ 62e33d74-71f7-4935-a4b1-fc598b8feb43
+md"""
+!!! note
+
+    The ``\rm CoV`` and Lorenz curve gap are frequently used measures of variation, rescaled to be invariant by change of scale.
+
+    They apply to a **positive** data set
+"""
 
 # ╔═╡ b25b3b96-8063-4084-be12-da675fa97a5d
 md"""
@@ -47,7 +56,7 @@ md"""
 \qquad
 \hat \sigma = \sqrt{\frac 1 {n - 1} \sum_i (X_i - \hat \mu)^2}
 \qquad
-\text{CoV} = \frac {\hat \sigma} {\hat \mu}
+\text{CoV} = \frac {\hat \sigma} {\hat \mu} \in [0, \sqrt{n - 1}]
 ```
 """
 
@@ -59,10 +68,22 @@ begin
     const cov = σ / μ
 end
 
+# ╔═╡ 519c9a52-0283-46f5-8d59-27d986efe602
+md"""
+```math
+{\rm JFI} = \frac{(\sum_i X_i)^2} {n \cdot \sum_i X_i^2} \in [\frac 1 n, 1]
+```
+"""
+
+# ╔═╡ cf6385e0-2457-47c9-8758-1d921a945a3c
+const jfi = xs -> begin
+    sum(xs)^2 / (length(xs) * sum(map(x -> x^2, xs)))
+end
+
 # ╔═╡ 249f095a-64c0-43b6-8538-07fff270e47a
 md"""
 ```math
-{\rm MAD} = \frac 1 n \sum_i |X_i - \hat \mu| \qquad {\rm gap} = \frac {\rm MAD} {2 \hat \mu}
+{\rm MAD} = \frac 1 n \sum_i |X_i - \hat \mu| \qquad {\rm gap} = \frac {\rm MAD} {2 \hat \mu} \in [0, 1 - \frac 1 n]
 ```
 """
 
@@ -92,31 +113,56 @@ begin
         local ss = sort(xs)
         cumsum(ss) / (length(ss) * mean(ss))
     end
-    plot((1:n) / n, lc(xs), label = "Lorenz curve")
+    plot((1:n) / n, lc(xs), dpi = 300, label = "Lorenz curve")
     plot!([0, 1], [0, 1], label = "Perfect equality", linestyle = :dash)
 end
 
-# ╔═╡ 519c9a52-0283-46f5-8d59-27d986efe602
-md"""
+# ╔═╡ 8dfa8d77-1110-4282-b868-38ab979f3f4f
+Markdown.parse("""
 ```math
-{\rm JFI} = \frac{(\sum_i X_i)^2} {n \cdot \sum_i X_i^2}
+{\\rm CoV} = $(sp(cov)) \\qquad {\\rm JFI} = $(sp(jfi(xs))) \\qquad {\\rm gap} = $(sp(gap))
 ```
-"""
-
-# ╔═╡ cf6385e0-2457-47c9-8758-1d921a945a3c
-begin
-    const jfi = xs -> begin
-        sum(xs)^2 / (length(xs) * sum(map(x -> x^2, xs)))
-    end
-    jfi(xs)
-end
+""")
 
 # ╔═╡ 64b9e905-600f-4db2-b2c6-3a20e2fa82f5
 md"""
 !!! warning
 
-	Discuss the source of the difference between the Lorenz curve gap and Jain's fairness index
+    Discuss the source of the difference between the Lorenz curve gap and Jain's fairness index
 """
+
+# ╔═╡ 7e323ae2-f633-424d-9571-5292d800624a
+md"""
+``\rm JFI`` and the Lorenz curve gap are fundamentally different and cannot be mapped to each other.
+
+The former is essentially the same as the standard deviation or the ``\rm CoV``.
+
+If the data comes from a heavy tailed distribution, the theoretical ``\rm CoV`` is infinite, and ``{\rm CoV} \to \infty`` as the number of data points gets large. Comparing different ``\rm CoVs`` in such a case does not bring much information. In contrast, the Lorenz curve gap continues to be defined, as long as the distribution has a finite mean. It should be preferred, if one has a choice.
+
+---
+
+Table 2.2 shows the values of Jain’s fairness index and the Lorenz curve gap is very sensitive to the presence of one outlier, which is consistent with the previous observation since Jain’s fairness index is defined by the ratio of standard deviation to mean (coefficient of variation). The Lorenz curve gap is less sensitive.
+
+---
+
+Jain’s Fairness index is based on standard deviation, and is less robust than the Lorenz Curve gap, which should be preferred.
+"""
+
+# ╔═╡ d8dfc46b-e6c1-4e0b-a84b-c6e7ef8fcdb5
+begin
+    local λ = 1 / μ
+    histogram(xs, normalize = :pdf, dpi = 300, label = "samples")
+    plot!(
+        range(minimum(xs), maximum(xs), 10_000),
+        x -> λ * exp(-λ * x),
+        lw = 2,
+        color = :red,
+        label = "Exp(1/μ)",
+        linestyle = :dot,
+    )
+    xlabel!("x")
+    ylabel!("P(x)")
+end
 
 # ╔═╡ 5960377c-d313-46e6-8826-e14e2c629bc5
 md"""
@@ -133,7 +179,7 @@ r_0 = 25
 R = \left\lceil \frac {2 \cdot r_0} { 1 - \gamma } \right\rceil - 1
 ```
 ```math
-[T_{(r_0)}, T_{(R + 1 - r_0)}]
+\left[T_{(r_0)}, T_{(R + 1 - r_0)}\right]_\gamma
 ```
 """
 
@@ -156,9 +202,11 @@ begin
     local (μ99L, μ99U) = bootstrap(xs)(mean)(0.99)
     local (μ95L, μ95U) = bootstrap(xs)(mean)(0.95)
 
+    const boot = Dict(95 => (μ95L, μ95U), 99 => (μ99L, μ99U))
+
     Markdown.parse("""
     ```math
-    \\hat \\mu = $(s(μ)) \\in [$(s(μ95L)), $(s(μ95U))] \\subset [$(s(μ99L)), $(s(μ99U))]
+    \\hat \\mu = $(sp(μ)) \\in [$(sp(μ95L)), $(sp(μ95U))]_{.95} \\subset [$(sp(μ99L)), $(sp(μ99U))]_{.99}
     ```
     """)
 end
@@ -170,7 +218,7 @@ begin
 
     Markdown.parse("""
     ```math
-    \\hat \\sigma = $(s(σ)) \\in [$(s(σ95L)), $(s(σ95U))] \\subset [$(s(σ99L)), $(s(σ95U))]
+    \\hat \\sigma = $(sp(σ)) \\in [$(sp(σ95L)), $(sp(σ95U))]_{.95} \\subset [$(sp(σ99L)), $(sp(σ95U))]_{.99}
     ```
     """)
 end
@@ -182,7 +230,7 @@ begin
 
     Markdown.parse("""
     ```math
-    { \\rm gap } = $(s(gap)) \\in [$(s(gap95L)), $(s(gap95U))] \\subset [$(s(gap99L)), $(s(gap99U))]
+    { \\rm gap } = $(sp(gap)) \\in [$(sp(gap95L)), $(sp(gap95U))]_{.95} \\subset [$(sp(gap99L)), $(sp(gap99U))]_{.99}
     ```
     """)
 end
@@ -194,22 +242,24 @@ begin
 
     Markdown.parse("""
     ```math
-    { \\rm JFI} = $(s(jfi(xs))) \\in [$(s(jfi95L)), $(s(jfi95U))] \\subset [$(s(jfi99L)), $(s(jfi99U))]
+    { \\rm JFI} = $(sp(jfi(xs))) \\in [$(sp(jfi95L)), $(sp(jfi95U))]_{.95} \\subset [$(sp(jfi99L)), $(sp(jfi99U))]_{.99}
     ```
     """)
 end
 
 # ╔═╡ 73774c4c-0dab-481a-b277-75cdb68cecad
 md"""
-!!! warning
+!!! note
 
-    Asyntotic procedure for ``\hat \mu``
+    Asymptotic procedure for ``\hat \mu``
 """
 
 # ╔═╡ c928a401-3291-49ba-be56-ece886e6ab0d
 md"""
 ```math
-	\hat \mu \pm z_{\frac {1 + \gamma} 2} \frac {\hat \sigma} {\sqrt n}
+s = \sqrt { \frac 1 n \sum_i (X_i - \hat \mu)^2 }
+\qquad
+\left[\hat \mu \pm z_{\frac {1 + \gamma} 2} \frac {s} {\sqrt n}\right]_{\gamma}
 ```
 """
 
@@ -218,18 +268,22 @@ begin
     local η95 = quantile.(Normal(), (1 + 0.95) / 2)
     local η99 = quantile.(Normal(), (1 + 0.99) / 2)
 
-    local δμ95 = η95 * σ / sqrt(n)
-    local δμ99 = η99 * σ / sqrt(n)
+    local s = std(xs, corrected = false)
 
-    local μL95 = μ - δμ95
-    local μU95 = μ + δμ95
+    local δμ95 = η95 * s / sqrt(n)
+    local δμ99 = η99 * s / sqrt(n)
 
-    local μL99 = μ - δμ99
-    local μU99 = μ + δμ99
+    local μ95L = μ - δμ95
+    local μ95U = μ + δμ95
+
+    local μ99L = μ - δμ99
+    local μ99U = μ + δμ99
+
+    const asym = Dict(95 => (μ95L, μ95U), 99 => (μ99L, μ99U))
 
     Markdown.parse("""
     ```math
-    \\hat \\mu = $(s(μ)) \\in [$(s(μL95)), $(s(μU95))] \\subset [$(s(μL99)), $(s(μU99))]
+    \\hat \\mu = $(sp(μ)) \\in [$(sp(μ95L)), $(sp(μ95U))]_{.95} \\subset [$(sp(μ99L)), $(sp(μ99U))]_{.99}
     ```
     """)
 end
@@ -238,14 +292,49 @@ end
 md"""
 !!! note
 
-	Since we have both CIs, we have to take the union
+    Since we have multiple CIs, we have to take the union
 """
+
+# ╔═╡ 34e5f062-dd38-44b4-bfc2-06213d2e3b44
+begin
+    local μ95L = minimum([x[95][1] for x in [asym, boot]])
+    local μ95U = maximum([x[95][2] for x in [asym, boot]])
+
+    local μ99L = minimum([x[99][1] for x in [asym, boot]])
+    local μ99U = maximum([x[99][2] for x in [asym, boot]])
+
+    Markdown.parse("""
+    ```math
+    \\hat \\mu = $(sp(μ)) \\in [$(sp(μ95L)), $(sp(μ95U))]_{.95} \\subset [$(sp(μ99L)), $(sp(μ99U))]_{.99}
+    ```
+    """)
+end
 
 # ╔═╡ 091680d2-f391-4be8-a29e-86c1277fec31
 md"""
 !!! warning
 
 	Discuss the results
+"""
+
+# ╔═╡ 68e4f7de-ed02-4b56-8d85-00025ed64cb7
+md"""
+The reliability of the bootstrap method depends on the size of ``n``, i.e., on the number of samples available.
+In this case ``n`` is quite small, so bootstrap confidence intervals are to be taken with a grain of salt...
+
+---
+
+Caution may be required when using the asymptotic procedure, as it makes 3 assumptions:
+
+1. the data comes from an iid sequence
+2. the common distribution has a finite variance
+3. the number of samples is large
+
+Assumption (1) is the same as for all confidence intervals in this chapter.
+
+Assumption (2) is true provided that the distribution is not heavy-tailed.
+
+Assumption (3) generally holds even for small values of $$n$$.
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -1381,15 +1470,19 @@ version = "1.4.1+0"
 # ╠═dbef143d-1813-4ba6-85fb-96102352c139
 # ╠═477749dd-7a7a-4987-b581-060ab29984ad
 # ╠═c780d252-40cc-413e-aea1-3595a87fa13c
+# ╟─62e33d74-71f7-4935-a4b1-fc598b8feb43
 # ╟─b25b3b96-8063-4084-be12-da675fa97a5d
 # ╠═5d1ad6b3-fd01-401d-a66e-5d65d5b9294d
+# ╟─519c9a52-0283-46f5-8d59-27d986efe602
+# ╠═cf6385e0-2457-47c9-8758-1d921a945a3c
 # ╟─249f095a-64c0-43b6-8538-07fff270e47a
 # ╠═9077f137-2458-44a7-9050-fb23b3821020
 # ╟─be646bcf-2167-4a9e-b7d2-00c5490e97f9
 # ╠═a394eec7-bbcf-4a95-8018-dd1217e81669
-# ╟─519c9a52-0283-46f5-8d59-27d986efe602
-# ╠═cf6385e0-2457-47c9-8758-1d921a945a3c
+# ╟─8dfa8d77-1110-4282-b868-38ab979f3f4f
 # ╟─64b9e905-600f-4db2-b2c6-3a20e2fa82f5
+# ╟─7e323ae2-f633-424d-9571-5292d800624a
+# ╠═d8dfc46b-e6c1-4e0b-a84b-c6e7ef8fcdb5
 # ╟─5960377c-d313-46e6-8826-e14e2c629bc5
 # ╟─c4be1d8d-d65d-4474-99ef-860d35fb3396
 # ╠═86857496-fc82-4af6-aa3c-2d8c11a54dcb
@@ -1401,6 +1494,8 @@ version = "1.4.1+0"
 # ╟─c928a401-3291-49ba-be56-ece886e6ab0d
 # ╠═3672eecb-2cfb-4217-a806-1066bd473f8a
 # ╟─c270ee13-3ab2-4df8-ae9f-ff2959aa3046
+# ╠═34e5f062-dd38-44b4-bfc2-06213d2e3b44
 # ╟─091680d2-f391-4be8-a29e-86c1277fec31
+# ╟─68e4f7de-ed02-4b56-8d85-00025ed64cb7
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
