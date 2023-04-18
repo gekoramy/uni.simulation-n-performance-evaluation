@@ -24,12 +24,27 @@ const xs = readdlm("data_ex3.csv", ',', Float64) |> vec
 
 # ╔═╡ 1ad1a1f8-c0aa-41ba-bf33-e18d428d7a63
 md"""
-Since ``n`` is large, the binomial distribution can be approximated by a Gaussian distribution, thus:
+``X_1, \ldots, X_n`` are ``n`` iid random variables, with a common CDF ``F(\cdot)``. Assume that ``F(\cdot)`` has a density, and let ``m_p`` be a ``p``-quantile of ``F(\cdot)``, i.e. ``F(m_p)=p``, for ``p \in ]0, 1[``.
+
+Let ``X_{(1)} \leq X_{(2)} \leq \ldots \leq X_{(n)}`` be the order statistic.
+Let ``B_{n,p}`` be the CDF of the binomial distribution with ``n`` repetitions and probability of success ``p``. A confidence interval for ``m_p`` at level ``\gamma`` is
 
 ```math
-l \sim \left\lfloor nq - z_{\frac {1 + \gamma} 2} \cdot \sqrt{nq (1 - q)} \right\rfloor
+\left[X_{(l)}, X_{(u)}\right]_\gamma
+```
+
+where ``l`` and ``u`` satisfy
+
+```math
+B_{n,p}(u − 1) − B_{n,p}(l − 1) \geq \gamma
+```
+
+Since ``n`` is large, we can use the approximation:
+
+```math
+l \sim \left\lfloor np - z_{\frac {1 + \gamma} 2} \cdot \sqrt{n p (1 - p)} \right\rfloor
 \qquad
-u \sim \left\lceil nq + z_{\frac {1 + \gamma} 2} \cdot \sqrt{nq (1 - q)} \right\rceil + 1
+u \sim \left\lceil np + z_{\frac {1 + \gamma} 2} \cdot \sqrt{n p (1 - p)} \right\rceil + 1
 ```
 """
 
@@ -39,12 +54,12 @@ begin
     local n = length(xs)
     local η = quantile.(Normal(), (1 + 0.95) / 2)
 
-    local lower = q -> begin
-        floor(Int64, n * q - η * sqrt(n * q * (1 - q)))
+    local lower = p -> begin
+        floor(Int64, n * p - η * sqrt(n * p * (1 - p)))
     end
 
-    local upper = q -> begin
-        ceil(Int64, n * q + η * sqrt(n * q * (1 - q))) + 1
+    local upper = p -> begin
+        ceil(Int64, n * p + η * sqrt(n * p * (1 - p))) + 1
     end
 
     const (q10, q25, q50, q75, q90) =
@@ -122,6 +137,8 @@ begin
     vspan!([q75L, q75U], label = "", color = 5, fillstyle = :/)
     vspan!([q90L, q90U], label = "", color = 6, fillstyle = :/)
 
+    yticks!([0, 0.1, 0.25, 0.5, 0.75, 0.9, 1])
+
     xlabel!("x")
     ylabel!("P(X > x)")
 end
@@ -150,7 +167,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.5"
 manifest_format = "2.0"
-project_hash = "8696f60b8c10ed6d9672b579c74ea5dbeeab1500"
+project_hash = "42ad8e36b51ce368acc9ff3c765921baa8908881"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
