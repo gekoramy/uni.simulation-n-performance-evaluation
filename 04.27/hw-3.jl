@@ -22,6 +22,25 @@ const s(x::Real)::String = @sprintf("%.5f", x)
 # ╔═╡ 6f4a10af-1e97-4f42-b2ef-3718ee3e386e
 const xs = readdlm("data_ex3.csv", ',', Float64) |> vec
 
+# ╔═╡ 8ad65c8a-aef5-4bee-b3bf-86487692ac24
+md"""
+```math
+q{\rm-quantile} = \frac {x_{(\lfloor k \rfloor)} + x_{(\lceil k \rceil)}} 2
+\qquad
+k = qn + (1 - q)
+```
+"""
+
+# ╔═╡ f79a0d6c-8031-4fcd-91f2-d7b9020541ec
+const qntl = xs -> begin
+    ss = sort(xs)
+    n = length(xs)
+    q -> begin
+        k = q * n + (1 - q)
+       (ss[floor(Int, k)] + ss[ceil(Int, k)]) / 2
+    end
+end
+
 # ╔═╡ 1ad1a1f8-c0aa-41ba-bf33-e18d428d7a63
 md"""
 ``X_1, \ldots, X_n`` are ``n`` iid random variables, with a common CDF ``F(\cdot)``. Assume that ``F(\cdot)`` has a density, and let ``m_p`` be a ``p``-quantile of ``F(\cdot)``, i.e. ``F(m_p)=p``, for ``p \in ]0, 1[``.
@@ -63,7 +82,7 @@ begin
     end
 
     const (q10, q25, q50, q75, q90) =
-        quantile(ss, [0.1, 0.25, 0.5, 0.75, 0.9], sorted = true)
+        map(qntl(xs), [0.1, 0.25, 0.5, 0.75, 0.9])
 
     # 1st quartile
 
@@ -1275,6 +1294,8 @@ version = "1.4.1+0"
 # ╟─24518d88-be29-4240-9c22-9093ca315ce2
 # ╠═dd9519ee-894d-435e-adc1-e2d56c1c98f8
 # ╠═6f4a10af-1e97-4f42-b2ef-3718ee3e386e
+# ╟─8ad65c8a-aef5-4bee-b3bf-86487692ac24
+# ╠═f79a0d6c-8031-4fcd-91f2-d7b9020541ec
 # ╟─1ad1a1f8-c0aa-41ba-bf33-e18d428d7a63
 # ╠═78b5db05-c394-496a-92c0-9e0ee5c8951f
 # ╟─179672cb-f529-406f-a60f-943dd9fda563
