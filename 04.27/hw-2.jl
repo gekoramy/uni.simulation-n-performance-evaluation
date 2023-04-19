@@ -118,7 +118,7 @@ r_0 = 25
 R = \left\lceil \frac {2 \cdot r_0} { 1 - \gamma } \right\rceil - 1
 ```
 ```math
-[T_{(r_0)}, T_{(R + 1 - r_0)}]
+[T_{(r_0)}, T_{(R + 1 - r_0)}]_\gamma
 ```
 """
 
@@ -154,10 +154,10 @@ begin
 
     Markdown.parse("""
     ```math
-    \\hat \\mu = $(sp(μ)) \\in [$(sp(μL)), $(sp(μU))]
+    \\hat \\mu = $(sp(μ)) \\in [$(sp(μL)), $(sp(μU))]_{.99}
     ```
     ```math
-    \\hat \\sigma = $(sp(σ)) \\in [$(sp(σL)), $(sp(σU))]
+    \\hat \\sigma = $(sp(σ)) \\in [$(sp(σL)), $(sp(σU))]_{.99}
     ```
     """)
 end
