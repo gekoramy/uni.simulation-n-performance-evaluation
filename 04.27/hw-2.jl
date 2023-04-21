@@ -40,13 +40,13 @@ const sp(x::Real)::String = @sprintf("%.5f", x)
 # ╔═╡ e8760ff4-a8e8-49f3-9896-b0140e4f7e57
 md"""
 ```math
-f(x) = \frac 1 A f^\prime(x)
+f(x) = \frac 1 A g(x)
 \qquad
 x \in \left[-\frac 5 2 \pi, \frac 5 2 \pi\right]
 ```
 
 ```math
-f^\prime(x) = e^{-\frac{|x|}{4}} \left( \sin(|x|) + 1 \right)
+g(x) = e^{-\frac{|x|}{4}} \left( \sin(|x|) + 1 \right)
 ```
 """
 
@@ -56,9 +56,9 @@ begin
     const M = 1.5
     const f = x -> begin
         A = 8.69336125
-        return -bound <= x && x <= bound ? f′(x) / A : 0
+        return -bound <= x && x <= bound ? g(x) / A : 0
     end
-    const f′ = x -> begin
+    const g = x -> begin
         xp = abs(x)
         return exp(-xp / 4) * (sin(xp) + 1)
     end
@@ -71,7 +71,7 @@ To implement rejection sampling algorithm we do **not** need to know the multipl
 In our case, we have ``M = $M`` such that
 
 ```math
-\\forall x \\in \\left[-\\frac 5 2 \\pi, \\frac 5 2 \\pi\\right]. \\quad f^\\prime(x) < M
+\\forall x \\in \\left[-\\frac 5 2 \\pi, \\frac 5 2 \\pi\\right]. \\quad g(x) < M
 ```
 """,
 )
@@ -79,7 +79,7 @@ In our case, we have ``M = $M`` such that
 # ╔═╡ e4db1c88-85a7-45f5-b3a1-f6ae9572cbe0
 begin
     local xs = range(-bound, bound, 1_000)
-    plot(xs, f′, lw = 2, color = :red, label = "f′(x)")
+    plot(xs, g, lw = 2, color = :red, label = "g(x)")
     hline!([M], color = :blue, label = "M")
     xlabel!("x")
     ylabel!("y")
@@ -88,7 +88,7 @@ end
 # ╔═╡ 35a2d5ab-ff2d-4eca-985b-022c70478e2f
 function rejectiong_sampling()
     IterTools.repeatedly(() -> rand(seed, Uniform(-bound, bound))) |>
-    Filter(u -> rand(seed, Uniform(0, M)) < f′(u)) |>
+    Filter(u -> rand(seed, Uniform(0, M)) < g(u)) |>
     first
 end
 
