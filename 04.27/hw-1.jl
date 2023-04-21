@@ -7,6 +7,14 @@ using InteractiveUtils
 # ╔═╡ f7cd7ba0-da1a-11ed-065a-e71f388cf107
 using Random, StatsPlots, Transducers, IterTools, Distributions, DelimitedFiles, Printf
 
+# ╔═╡ 7910a19f-f12a-4c34-92a5-f7f84a8c1598
+md"""
+|        |         |                                @ |
+|:-------|:--------|---------------------------------:|
+| Luca   | Mosetti | luca.mosetti-1@studenti.unitn.it |
+| Shandy | Darma   |   shandy.darma@studenti.unitn.it |
+"""
+
 # ╔═╡ dda0feea-1db6-4c7b-8237-65bcdd5888bd
 md"""
 # Exercise 1
@@ -1647,6 +1655,7 @@ version = "1.4.1+0"
 """
 
 # ╔═╡ Cell order:
+# ╟─7910a19f-f12a-4c34-92a5-f7f84a8c1598
 # ╠═f7cd7ba0-da1a-11ed-065a-e71f388cf107
 # ╟─dda0feea-1db6-4c7b-8237-65bcdd5888bd
 # ╠═dbef143d-1813-4ba6-85fb-96102352c139
