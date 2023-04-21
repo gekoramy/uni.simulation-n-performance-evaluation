@@ -61,7 +61,8 @@ u \sim \left\lceil np + z_{\frac {1 + \gamma} 2} \cdot \sqrt{n p (1 - p)} \right
 begin
     local ss = sort(xs)
     local n = length(xs)
-    local η = quantile.(Normal(), (1 + 0.95) / 2)
+    local γ = 0.95
+    local η = quantile.(Normal(), (1 + γ) / 2)
 
     local qntl = q -> begin
         k = q * n + (1 - q)
