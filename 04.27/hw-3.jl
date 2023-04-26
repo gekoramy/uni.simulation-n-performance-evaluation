@@ -118,7 +118,7 @@ F(t) = \frac{1}{n} \cdot |{\set{x_i | x_i \leq t}}|
 """
 
 # ╔═╡ eb58d212-8fbb-426c-98cd-a3f6258b53be
-cdfy = xs -> t -> begin
+const cdfy = xs -> t -> begin
     count(x -> x <= t, xs) / length(xs)
 end
 

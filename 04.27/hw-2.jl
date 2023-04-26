@@ -133,9 +133,9 @@ R = \left\lceil \frac {2 \cdot r_0} { 1 - \gamma } \right\rceil - 1
 # ╔═╡ 86857496-fc82-4af6-aa3c-2d8c11a54dcb
 const bootstrap =
     xs -> fn -> γ -> begin
-        local r0 = 25
-        local R = ceil(Int64, 2 * r0 / (1 - γ)) - 1
-        local ts =
+        r0 = 25
+        R = ceil(Int64, 2 * r0 / (1 - γ)) - 1
+        ts =
             1:R |>
             Map(_ -> rand(seed, xs, length(xs))) |>
             Map(fn) |>
