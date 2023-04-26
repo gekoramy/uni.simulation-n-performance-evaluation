@@ -21,7 +21,7 @@ md"""
 
 !!! task
 
-	Load the iid data samples from the CSV file `data_ex3.csv` and provide the value of all quartiles, and of the 10th and 90th percentiles of the data, along with a 95% confidence interval for all of them.
+    Load the iid data samples from the CSV file `data_ex3.csv` and provide the value of all quartiles, and of the 10th and 90th percentiles of the data, along with a 95% confidence interval for all of them.
 """
 
 # ╔═╡ dd9519ee-894d-435e-adc1-e2d56c1c98f8

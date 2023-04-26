@@ -21,22 +21,22 @@ md"""
 
 !!! task
 
-	Consider the following "weird" probability density function:
-	```math
-	f(x) = \frac 1 A e^{-\frac{|x|}{4}} \left( \sin(|x|) + 1 \right) \qquad x \in \left[-\frac 5 2 \pi, \frac 5 2 \pi\right]
-	```
+    Consider the following "weird" probability density function:
+    ```math
+    f(x) = \frac 1 A e^{-\frac{|x|}{4}} \left( \sin(|x|) + 1 \right) \qquad x \in \left[-\frac 5 2 \pi, \frac 5 2 \pi\right]
+    ```
 
-	where ``A = 8.69336125`` is a normalization factor such that
-	```math
-	\int_{-\frac 5 2 \pi}^{\frac 5 2 \pi} f(t) \,{\rm d}t = 1
-	```
-	so ``f(x)`` is in fact a PDF. (Question: do you really need to know the value of ``A``?)
+    where ``A = 8.69336125`` is a normalization factor such that
+    ```math
+    \int_{-\frac 5 2 \pi}^{\frac 5 2 \pi} f(t) \,{\rm d}t = 1
+    ```
+    so ``f(x)`` is in fact a PDF. (Question: do you really need to know the value of ``A``?)
 
-	1. Employ rejection sampling to draw a large number of samples from the above PDF.
+    1. Employ rejection sampling to draw a large number of samples from the above PDF.
 
-	2. Plot the resulting empirical PDF (e.g., through a histogram) and compare it against the theoretical PDF. Make sure you draw a sufficiently large number of samples, so that the histogram convincingly fits the theoretical PDF.
+    2. Plot the resulting empirical PDF (e.g., through a histogram) and compare it against the theoretical PDF. Make sure you draw a sufficiently large number of samples, so that the histogram convincingly fits the theoretical PDF.
 
-	3. Take 1000 draws from the above distribution. Apply the bootstrap procedure of Exercise 1 to compute a 99% confidence interval for the mean and standard deviation of the dataset you drew.
+    3. Take 1000 draws from the above distribution. Apply the bootstrap procedure of Exercise 1 to compute a 99% confidence interval for the mean and standard deviation of the dataset you drew.
 """
 
 # ╔═╡ 2ea870d0-ede6-4d65-9149-08359a7c8a25
