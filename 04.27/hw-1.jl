@@ -5,7 +5,7 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ f7cd7ba0-da1a-11ed-065a-e71f388cf107
-using Random, StatsPlots, Transducers, IterTools, Distributions, DelimitedFiles, Printf
+using Random, Plots, Transducers, IterTools, Distributions, DelimitedFiles, Printf
 
 # ╔═╡ 7910a19f-f12a-4c34-92a5-f7f84a8c1598
 md"""
@@ -43,7 +43,7 @@ md"""
 const sp(x::Real)::String = @sprintf("%.5f", x)
 
 # ╔═╡ 477749dd-7a7a-4987-b581-060ab29984ad
-const seed = Random.Xoshiro(3)
+const seed = Random.Xoshiro(7)
 
 # ╔═╡ c780d252-40cc-413e-aea1-3595a87fa13c
 const xs = readdlm("data_ex1.csv", '\n', Float64) |> vec
@@ -79,7 +79,7 @@ end
 # ╔═╡ 519c9a52-0283-46f5-8d59-27d986efe602
 md"""
 ```math
-{\rm JFI} = \frac{(\sum_i X_i)^2} {n \cdot \sum_i X_i^2} \in [\frac 1 n, 1]
+{\rm JFI} = \frac 1 n \frac{(\sum_i X_i)^2} {\sum_i X_i^2} \in [\frac 1 n, 1]
 ```
 """
 
@@ -91,16 +91,16 @@ end
 # ╔═╡ 249f095a-64c0-43b6-8538-07fff270e47a
 md"""
 ```math
-{\rm MAD} = \frac 1 n \sum_i |X_i - \hat \mu| \qquad {\rm gap} = \frac {\rm MAD} {2 \hat \mu} \in [0, 1 - \frac 1 n]
+{\rm MAD} = \frac 1 n \sum_i |X_i - \hat \mu| \qquad {\rm LCG} = \frac {\rm MAD} {2 \hat \mu} \in [0, 1 - \frac 1 n]
 ```
 """
 
 # ╔═╡ 9077f137-2458-44a7-9050-fb23b3821020
 begin
     const lcg = xs -> begin
-        local n = length(xs)
-        local μ = mean(xs)
-        local mad = sum(map(x -> abs(x - μ), xs)) / n
+        n = length(xs)
+        μ = mean(xs)
+        mad = sum(map(x -> abs(x - μ), xs)) / n
         mad / (2 * μ)
     end
     const gap = lcg(xs)
@@ -118,7 +118,7 @@ l_i = \frac{X_{(1)} + \ldots + X_{(i)}}{n \hat \mu}
 # ╔═╡ a394eec7-bbcf-4a95-8018-dd1217e81669
 begin
     const lc = xs -> begin
-        local ss = sort(xs)
+        ss = sort(xs)
         cumsum(ss) / (length(ss) * mean(ss))
     end
     plot((1:n) / n, lc(xs), dpi = 300, label = "Lorenz curve")
@@ -128,7 +128,7 @@ end
 # ╔═╡ 8dfa8d77-1110-4282-b868-38ab979f3f4f
 Markdown.parse("""
 ```math
-{\\rm CoV} = $(sp(cov)) \\qquad {\\rm JFI} = $(sp(jfi(xs))) \\qquad {\\rm gap} = $(sp(gap))
+{\\rm CoV} = $(sp(cov)) \\qquad {\\rm JFI} = $(sp(jfi(xs))) \\qquad {\\rm LCG} = $(sp(gap))
 ```
 """)
 
@@ -139,46 +139,53 @@ md"""
     Discuss the source of the difference between the Lorenz curve gap and Jain's fairness index
 """
 
-# ╔═╡ 7e323ae2-f633-424d-9571-5292d800624a
+# ╔═╡ 52cf2501-83e6-4bea-a921-112de9381372
 md"""
+JFI and LCG are both measures of dispersion, but approach the problem from different angles.
+As the dispersion of the dataset increases
+- the LCG increases
+- the JFI decreases
 
-If the ``\rm CoV`` is high - heavy tailed distributions - comparing ``\rm JFI, CoV`` does not bring a lot of information
+Because of the quadratic factor, JFI is more sensitive to the higher values of the dataset and thus to any large-value outliers.
+In contrast, the LCG is more stable because it gives equal weight to small-value outliers and large-value outliers.
 
----
+In this case:
+- the JFI value suggests that there is a significant amount of inequality in the dataset
+- the LCG value suggests a moderately unequal distribution
 
-``\rm JFI`` and the Lorenz curve gap are fundamentally different and cannot be mapped to each other.
-
-The former is essentially the same as the standard deviation or the ``\rm CoV``.
-
-If the data comes from a heavy tailed distribution, the theoretical ``\rm CoV`` is infinite, and ``{\rm CoV} \to \infty`` as the number of data points gets large. Comparing different ``\rm CoVs`` in such a case does not bring much information. In contrast, the Lorenz curve gap continues to be defined, as long as the distribution has a finite mean. It should be preferred, if one has a choice.
-
----
-
-Table 2.2 shows the values of Jain’s fairness index and the Lorenz curve gap is very sensitive to the presence of one outlier, which is consistent with the previous observation since Jain’s fairness index is defined by the ratio of standard deviation to mean (coefficient of variation). The Lorenz curve gap is less sensitive.
-
----
-
-Jain’s Fairness index is based on standard deviation, and is less robust than the Lorenz Curve gap, which should be preferred.
+Looking at the histogram of the dataset we can see the presence of a few large values.
 """
 
 # ╔═╡ d8dfc46b-e6c1-4e0b-a84b-c6e7ef8fcdb5
 begin
-    local λ = 1 / μ
-    local h = histogram(xs, normalize = :pdf, dpi = 300, label = "samples")
-    plot!(
-        range(minimum(xs), maximum(xs), 10_000),
-        x -> λ * exp(-λ * x),
-        lw = 2,
-        color = :red,
-        label = "Exp(1/μ)",
-        linestyle = :dot,
+    histogram(xs, normalize = :pdf, dpi = 300, label = "samples")
+    lens!(
+        [200, 250],
+        [0, 0.001],
+        inset = (1, bbox(0.5, 0.5, 0.5, 0.25)),
+        subplot = 2,
+        ticks = false,
+        framestyle = :box,
     )
     xlabel!("x")
-    ylabel!("P(x)")
+    ylabel!("P(X)")
+end
 
-    local qq = qqplot(Exponential(μ), xs, xlabel = "Exp(1/μ)", ylabel = "samples")
+# ╔═╡ f68a02fb-1d38-4dff-8187-1a88b73c9af0
+md"""
+For example, if we exclude a few of these values from the dataset
+- the JFI would increase significantly
+- the LCG would decrease slightly
+"""
 
-    plot(h, qq, layout = (2, 1), size = (500, 700))
+# ╔═╡ f3a44c86-99e0-4ce5-a331-f6ebf983c77f
+begin
+    local ts = 2497:2500
+    plot(ts, t -> jfi(sort(xs)[1:t]), label = "JFI", markershape = :hexagon)
+    plot!(ts, t -> lcg(sort(xs)[1:t]), label = "LCG", markershape = :hexagon)
+    xticks!(ts)
+    yticks!(range(0.4, stop = 0.5, step = 0.0025))
+    xlabel!("sorted dataset [1:x]")
 end
 
 # ╔═╡ 5960377c-d313-46e6-8826-e14e2c629bc5
@@ -201,11 +208,11 @@ R = \left\lceil \frac {2 \cdot r_0} { 1 - \gamma } \right\rceil - 1
 """
 
 # ╔═╡ 86857496-fc82-4af6-aa3c-2d8c11a54dcb
-bootstrap =
+const bootstrap =
     xs -> fn -> γ -> begin
-        local r0 = 25
-        local R = ceil(Int64, 2 * r0 / (1 - γ)) - 1
-        local ts =
+        r0 = 25
+        R = ceil(Int64, 2 * r0 / (1 - γ)) - 1
+        ts =
             1:R |>
             Map(_ -> rand(seed, xs, length(xs))) |>
             Map(fn) |>
@@ -247,7 +254,7 @@ begin
 
     Markdown.parse("""
     ```math
-    { \\rm gap } = $(sp(gap)) \\in [$(sp(gap95L)), $(sp(gap95U))]_{.95} \\subset [$(sp(gap99L)), $(sp(gap99U))]_{.99}
+    { \\rm LCG } = $(sp(gap)) \\in [$(sp(gap95L)), $(sp(gap95U))]_{.95} \\subset [$(sp(gap99L)), $(sp(gap99U))]_{.99}
     ```
     """)
 end
@@ -309,7 +316,7 @@ end
 md"""
 !!! note
 
-    Since we have multiple CIs, we have to take the union
+    Since we have multiple CIs at same level ``\gamma``, we have to take the union
 """
 
 # ╔═╡ 34e5f062-dd38-44b4-bfc2-06213d2e3b44
@@ -353,27 +360,16 @@ end
 md"""
 !!! warning
 
-	Discuss the results
+  Discuss the results
 """
 
-# ╔═╡ 68e4f7de-ed02-4b56-8d85-00025ed64cb7
+# ╔═╡ af432d67-dfc7-4856-a3e2-781595d4a955
 md"""
-The reliability of the bootstrap method depends on the size of ``n``, i.e., on the number of samples available.
-In this case ``n`` is quite small, so bootstrap confidence intervals are to be taken with a grain of salt...
+The 95- and 99-level CIs returned by the bootstrap method and the 95- and 99-level CIs returned by the asymptotic method are respectively comparable.
+The extremes and the size vary by negligible factors.
 
----
-
-Caution may be required when using the asymptotic procedure, as it makes 3 assumptions:
-
-1. the data comes from an iid sequence
-2. the common distribution has a finite variance
-3. the number of samples is large
-
-Assumption (1) is the same as for all confidence intervals in this chapter.
-
-Assumption (2) is true provided that the distribution is not heavy-tailed.
-
-Assumption (3) generally holds even for small values of $$n$$.
+The reliability of the bootstrap method depends on the proportions of ``n`` which is sufficiently large.
+The asymptotic method assumes instead that ``\hat \mu`` follows a normal distribution, a realistic assumption because of the central limit theorem.
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -382,15 +378,15 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 IterTools = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 Transducers = "28d57a85-8fef-5791-bfe6-a80928e7c999"
 
 [compat]
 Distributions = "~0.25.87"
 IterTools = "~1.4.0"
-StatsPlots = "~0.15.4"
+Plots = "~1.38.10"
 Transducers = "~0.4.75"
 """
 
@@ -400,13 +396,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.5"
 manifest_format = "2.0"
-project_hash = "9d79c290cd857aa926e39f42819c0b7e8fe42dd2"
-
-[[deps.AbstractFFTs]]
-deps = ["ChainRulesCore", "LinearAlgebra"]
-git-tree-sha1 = "16b6dbc4cf7caee4e1e75c49485ec67b667098a0"
-uuid = "621f4979-c628-5d54-868e-fcf4e3e8185c"
-version = "1.3.1"
+project_hash = "8696f60b8c10ed6d9672b579c74ea5dbeeab1500"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
@@ -423,26 +413,8 @@ version = "2.3.0"
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
 version = "1.1.1"
 
-[[deps.Arpack]]
-deps = ["Arpack_jll", "Libdl", "LinearAlgebra", "Logging"]
-git-tree-sha1 = "9b9b347613394885fd1c8c7729bfc60528faa436"
-uuid = "7d9fca2a-8960-54d3-9f78-7d1dccf2cb97"
-version = "0.5.4"
-
-[[deps.Arpack_jll]]
-deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "OpenBLAS_jll", "Pkg"]
-git-tree-sha1 = "5ba6c757e8feccf03a1554dfaf3e26b3cfc7fd5e"
-uuid = "68821587-b530-5797-8361-c406ea357684"
-version = "3.5.1+1"
-
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
-
-[[deps.AxisAlgorithms]]
-deps = ["LinearAlgebra", "Random", "SparseArrays", "WoodburyMatrices"]
-git-tree-sha1 = "66771c8d21c8ff5e3a93379480a2307ac36863f7"
-uuid = "13072b0f-2c55-5437-9ae7-d433b7a33950"
-version = "1.0.1"
 
 [[deps.BangBang]]
 deps = ["Compat", "ConstructionBase", "Future", "InitialValues", "LinearAlgebra", "Requires", "Setfield", "Tables", "ZygoteRules"]
@@ -493,12 +465,6 @@ git-tree-sha1 = "485193efd2176b88e6622a39a246f8c5b600e74e"
 uuid = "9e997f8a-9a97-42d5-a9f1-ce6bfc15e2c0"
 version = "0.1.6"
 
-[[deps.Clustering]]
-deps = ["Distances", "LinearAlgebra", "NearestNeighbors", "Printf", "Random", "SparseArrays", "Statistics", "StatsBase"]
-git-tree-sha1 = "7ebbd653f74504447f1c33b91cd706a69a1b189f"
-uuid = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"
-version = "0.14.4"
-
 [[deps.CodecZlib]]
 deps = ["TranscodingStreams", "Zlib_jll"]
 git-tree-sha1 = "9c209fb7536406834aa938fb149964b985de6c83"
@@ -506,10 +472,10 @@ uuid = "944b1d66-785c-5afd-91f1-9de20f533193"
 version = "0.7.1"
 
 [[deps.ColorSchemes]]
-deps = ["ColorTypes", "ColorVectorSpace", "Colors", "FixedPointNumbers", "Random", "SnoopPrecompile"]
-git-tree-sha1 = "aa3edc8f8dea6cbfa176ee12f7c2fc82f0608ed3"
+deps = ["ColorTypes", "ColorVectorSpace", "Colors", "FixedPointNumbers", "PrecompileTools", "Random"]
+git-tree-sha1 = "be6ab11021cd29f0344d5c4357b163af05a48cba"
 uuid = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
-version = "3.20.0"
+version = "3.21.0"
 
 [[deps.ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
@@ -572,12 +538,6 @@ git-tree-sha1 = "bfc1187b79289637fa0ef6d4436ebdfe6905cbd6"
 uuid = "e2d170a0-9d28-54be-80f0-106bbe20a464"
 version = "1.0.0"
 
-[[deps.DataValues]]
-deps = ["DataValueInterfaces", "Dates"]
-git-tree-sha1 = "d88a19299eba280a6d062e135a43f00323ae70bf"
-uuid = "e7dc6d0d-1eca-5fa6-8ad6-5aecde8b7ea5"
-version = "0.4.13"
-
 [[deps.Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -596,12 +556,6 @@ deps = ["InverseFunctions", "Test"]
 git-tree-sha1 = "80c3e8639e3353e5d2912fb3a1916b8455e2494b"
 uuid = "b429d917-457f-4dbc-8f4c-0cc954292b1d"
 version = "0.4.0"
-
-[[deps.Distances]]
-deps = ["LinearAlgebra", "SparseArrays", "Statistics", "StatsAPI"]
-git-tree-sha1 = "49eba9ad9f7ead780bfb7ee319f962c811c6d3b2"
-uuid = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
-version = "0.10.8"
 
 [[deps.Distributed]]
 deps = ["Random", "Serialization", "Sockets"]
@@ -647,18 +601,6 @@ deps = ["Artifacts", "Bzip2_jll", "FreeType2_jll", "FriBidi_jll", "JLLWrappers",
 git-tree-sha1 = "74faea50c1d007c85837327f6775bea60b5492dd"
 uuid = "b22a6f82-2f65-5046-a5b2-351ab43fb4e5"
 version = "4.4.2+2"
-
-[[deps.FFTW]]
-deps = ["AbstractFFTs", "FFTW_jll", "LinearAlgebra", "MKL_jll", "Preferences", "Reexport"]
-git-tree-sha1 = "f9818144ce7c8c41edf5c4c179c684d92aa4d9fe"
-uuid = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
-version = "1.6.0"
-
-[[deps.FFTW_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "c6033cc3892d0ef5bb9cd29b7f2f0331ea5184ea"
-uuid = "f5851436-0d7a-5f13-b9de-f02708fd171a"
-version = "3.3.10+0"
 
 [[deps.FileWatching]]
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
@@ -711,15 +653,15 @@ version = "3.3.8+0"
 
 [[deps.GR]]
 deps = ["Artifacts", "Base64", "DelimitedFiles", "Downloads", "GR_jll", "HTTP", "JSON", "Libdl", "LinearAlgebra", "Pkg", "Preferences", "Printf", "Random", "Serialization", "Sockets", "TOML", "Tar", "Test", "UUIDs", "p7zip_jll"]
-git-tree-sha1 = "0635807d28a496bb60bc15f465da0107fb29649c"
+git-tree-sha1 = "db730189e3d250d97515a91886de7e33aa8833e6"
 uuid = "28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71"
-version = "0.72.0"
+version = "0.72.2"
 
 [[deps.GR_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Cairo_jll", "FFMPEG_jll", "Fontconfig_jll", "GLFW_jll", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pixman_jll", "Qt5Base_jll", "Zlib_jll", "libpng_jll"]
-git-tree-sha1 = "99e248f643b052a77d2766fe1a16fb32b661afd4"
+git-tree-sha1 = "47a2efe07729dd508a032e2f56c46c517481052a"
 uuid = "d2c73de3-f751-5644-a686-071e5b155ba9"
-version = "0.72.0+0"
+version = "0.72.2+0"
 
 [[deps.Gettext_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Libiconv_jll", "Pkg", "XML2_jll"]
@@ -772,21 +714,9 @@ git-tree-sha1 = "4da0f88e9a39111c2fa3add390ab15f3a44f3ca3"
 uuid = "22cec73e-a1b8-11e9-2c92-598750a2cf9c"
 version = "0.3.1"
 
-[[deps.IntelOpenMP_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "0cb9352ef2e01574eeebdb102948a58740dcaf83"
-uuid = "1d5cc7b8-4909-519e-a0f8-d0f5ad9712d0"
-version = "2023.1.0+0"
-
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
-
-[[deps.Interpolations]]
-deps = ["Adapt", "AxisAlgorithms", "ChainRulesCore", "LinearAlgebra", "OffsetArrays", "Random", "Ratios", "Requires", "SharedArrays", "SparseArrays", "StaticArrays", "WoodburyMatrices"]
-git-tree-sha1 = "721ec2cf720536ad005cb38f50dbba7b02419a15"
-uuid = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
-version = "0.14.7"
 
 [[deps.InverseFunctions]]
 deps = ["Test"]
@@ -833,12 +763,6 @@ git-tree-sha1 = "6f2675ef130a300a112286de91973805fcc5ffbc"
 uuid = "aacddb02-875f-59d6-b918-886e6ef4fbf8"
 version = "2.1.91+0"
 
-[[deps.KernelDensity]]
-deps = ["Distributions", "DocStringExtensions", "FFTW", "Interpolations", "StatsBase"]
-git-tree-sha1 = "9816b296736292a80b9a3200eb7fbb57aaa3917a"
-uuid = "5ab0869b-81aa-558d-bb23-cbf5423bbe9b"
-version = "0.6.5"
-
 [[deps.LAME_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "f6250b16881adf048549549fba48b1161acdac8c"
@@ -864,13 +788,9 @@ version = "1.3.0"
 
 [[deps.Latexify]]
 deps = ["Formatting", "InteractiveUtils", "LaTeXStrings", "MacroTools", "Markdown", "OrderedCollections", "Printf", "Requires"]
-git-tree-sha1 = "2422f47b34d4b127720a18f86fa7b1aa2e141f29"
+git-tree-sha1 = "98dc144f1e0b299d49e8d23e56ad68d3e4f340a5"
 uuid = "23fbe1c1-3f47-55db-b15f-69d7ec21a316"
-version = "0.15.18"
-
-[[deps.LazyArtifacts]]
-deps = ["Artifacts", "Pkg"]
-uuid = "4af54fe1-eca0-43a8-85a7-787d91b784e3"
+version = "0.15.20"
 
 [[deps.LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
@@ -961,12 +881,6 @@ git-tree-sha1 = "cedb76b37bc5a6c702ade66be44f831fa23c681e"
 uuid = "e6f89c97-d47a-5376-807f-9c37f3926c36"
 version = "1.0.0"
 
-[[deps.MKL_jll]]
-deps = ["Artifacts", "IntelOpenMP_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "Pkg"]
-git-tree-sha1 = "2ce8695e1e699b68702c03402672a69f54b8aca9"
-uuid = "856f044c-d86e-5d09-b602-aeab76dc8ba7"
-version = "2022.2.0+0"
-
 [[deps.MacroTools]]
 deps = ["Markdown", "Random"]
 git-tree-sha1 = "42324d08725e200c23d4dfb549e0d5d89dede2d2"
@@ -1012,38 +926,15 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
 version = "2022.2.1"
 
-[[deps.MultivariateStats]]
-deps = ["Arpack", "LinearAlgebra", "SparseArrays", "Statistics", "StatsAPI", "StatsBase"]
-git-tree-sha1 = "91a48569383df24f0fd2baf789df2aade3d0ad80"
-uuid = "6f286f6a-111f-5878-ab1e-185364afe411"
-version = "0.10.1"
-
 [[deps.NaNMath]]
 deps = ["OpenLibm_jll"]
 git-tree-sha1 = "0877504529a3e5c3343c6f8b4c0381e57e4387e4"
 uuid = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
 version = "1.0.2"
 
-[[deps.NearestNeighbors]]
-deps = ["Distances", "StaticArrays"]
-git-tree-sha1 = "2c3726ceb3388917602169bed973dbc97f1b51a8"
-uuid = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
-version = "0.4.13"
-
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
 version = "1.2.0"
-
-[[deps.Observables]]
-git-tree-sha1 = "6862738f9796b3edc1c09d0890afce4eca9e7e93"
-uuid = "510215fc-4207-5dde-b226-833fc4488ee2"
-version = "0.5.4"
-
-[[deps.OffsetArrays]]
-deps = ["Adapt"]
-git-tree-sha1 = "82d7c9e310fe55aa54996e6f7f94674e2a38fcb4"
-uuid = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
-version = "1.12.9"
 
 [[deps.Ogg_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1063,9 +954,9 @@ version = "0.8.1+0"
 
 [[deps.OpenSSL]]
 deps = ["BitFlags", "Dates", "MozillaCACerts_jll", "OpenSSL_jll", "Sockets"]
-git-tree-sha1 = "e9d68fe4b5f78f215aa2f0e6e6dc9e9911d33048"
+git-tree-sha1 = "7fb975217aea8f1bb360cf1dde70bad2530622d2"
 uuid = "4d8831e6-92b7-49fb-bdf8-b643e874388c"
-version = "1.3.4"
+version = "1.4.0"
 
 [[deps.OpenSSL_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1130,16 +1021,22 @@ uuid = "ccf2f8ad-2431-5c83-bf29-c5338b663b6a"
 version = "3.1.0"
 
 [[deps.PlotUtils]]
-deps = ["ColorSchemes", "Colors", "Dates", "Printf", "Random", "Reexport", "SnoopPrecompile", "Statistics"]
-git-tree-sha1 = "c95373e73290cf50a8a22c3375e4625ded5c5280"
+deps = ["ColorSchemes", "Colors", "Dates", "PrecompileTools", "Printf", "Random", "Reexport", "Statistics"]
+git-tree-sha1 = "f92e1315dadf8c46561fb9396e525f7200cdc227"
 uuid = "995b91a9-d308-5afd-9ec6-746e21dbc043"
-version = "1.3.4"
+version = "1.3.5"
 
 [[deps.Plots]]
 deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "JLFzf", "JSON", "LaTeXStrings", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "Pkg", "PlotThemes", "PlotUtils", "Preferences", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "RelocatableFolders", "Requires", "Scratch", "Showoff", "SnoopPrecompile", "SparseArrays", "Statistics", "StatsBase", "UUIDs", "UnicodeFun", "Unzip"]
 git-tree-sha1 = "5434b0ee344eaf2854de251f326df8720f6a7b55"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 version = "1.38.10"
+
+[[deps.PrecompileTools]]
+deps = ["Preferences"]
+git-tree-sha1 = "bc2bda41d798c2e66e7c44a11007bb329b15941b"
+uuid = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
+version = "1.0.1"
 
 [[deps.Preferences]]
 deps = ["TOML"]
@@ -1170,12 +1067,6 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 [[deps.Random]]
 deps = ["SHA", "Serialization"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-
-[[deps.Ratios]]
-deps = ["Requires"]
-git-tree-sha1 = "dc84268fe0e3335a62e315a3a7cf2afa7178a734"
-uuid = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
-version = "0.4.3"
 
 [[deps.RecipesBase]]
 deps = ["SnoopPrecompile"]
@@ -1228,12 +1119,6 @@ git-tree-sha1 = "30449ee12237627992a99d5e30ae63e4d78cd24a"
 uuid = "6c6a2e73-6563-6170-7368-637461726353"
 version = "1.2.0"
 
-[[deps.SentinelArrays]]
-deps = ["Dates", "Random"]
-git-tree-sha1 = "77d3c4726515dca71f6d80fbb5e251088defe305"
-uuid = "91c51154-3ec4-41a3-a24f-3f23e20d615c"
-version = "1.3.18"
-
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 
@@ -1242,10 +1127,6 @@ deps = ["ConstructionBase", "Future", "MacroTools", "StaticArraysCore"]
 git-tree-sha1 = "e2cc6d8c88613c05e1defb55170bf5ff211fbeac"
 uuid = "efcf1570-3423-57d1-acb7-fd33fddbac46"
 version = "1.1.1"
-
-[[deps.SharedArrays]]
-deps = ["Distributed", "Mmap", "Random", "Serialization"]
-uuid = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
 
 [[deps.Showoff]]
 deps = ["Dates", "Grisu"]
@@ -1289,12 +1170,6 @@ git-tree-sha1 = "e08a62abc517eb79667d0a29dc08a3b589516bb5"
 uuid = "171d559e-b47b-412a-8079-5efa626c420e"
 version = "0.1.15"
 
-[[deps.StaticArrays]]
-deps = ["LinearAlgebra", "Random", "StaticArraysCore", "Statistics"]
-git-tree-sha1 = "63e84b7fdf5021026d0f17f76af7c57772313d99"
-uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.5.21"
-
 [[deps.StaticArraysCore]]
 git-tree-sha1 = "6b7ba252635a5eff6a0b0664a41ee140a1c9e72a"
 uuid = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
@@ -1322,12 +1197,6 @@ git-tree-sha1 = "f625d686d5a88bcd2b15cd81f18f98186fdc0c9a"
 uuid = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
 version = "1.3.0"
 
-[[deps.StatsPlots]]
-deps = ["AbstractFFTs", "Clustering", "DataStructures", "DataValues", "Distributions", "Interpolations", "KernelDensity", "LinearAlgebra", "MultivariateStats", "NaNMath", "Observables", "Plots", "RecipesBase", "RecipesPipeline", "Reexport", "StatsBase", "TableOperations", "Tables", "Widgets"]
-git-tree-sha1 = "e0d5bc26226ab1b7648278169858adcfbd861780"
-uuid = "f3b207a7-027a-5e70-b257-86293d7955fd"
-version = "0.15.4"
-
 [[deps.SuiteSparse]]
 deps = ["Libdl", "LinearAlgebra", "Serialization", "SparseArrays"]
 uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
@@ -1336,12 +1205,6 @@ uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 version = "1.0.0"
-
-[[deps.TableOperations]]
-deps = ["SentinelArrays", "Tables", "Test"]
-git-tree-sha1 = "e383c87cf2a1dc41fa30c093b2a19877c83e1bc1"
-uuid = "ab02a1b2-a7df-11e8-156e-fb1833f50b87"
-version = "1.2.0"
 
 [[deps.TableTraits]]
 deps = ["IteratorInterfaceExtensions"]
@@ -1416,18 +1279,6 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "4528479aa01ee1b3b4cd0e6faef0e04cf16466da"
 uuid = "2381bf8a-dfd0-557d-9999-79630e7b1b91"
 version = "1.25.0+0"
-
-[[deps.Widgets]]
-deps = ["Colors", "Dates", "Observables", "OrderedCollections"]
-git-tree-sha1 = "fcdae142c1cfc7d89de2d11e08721d0f2f86c98a"
-uuid = "cc8bc4a8-27d6-5769-a93b-9d913e69aa62"
-version = "0.6.6"
-
-[[deps.WoodburyMatrices]]
-deps = ["LinearAlgebra", "SparseArrays"]
-git-tree-sha1 = "de67fa59e33ad156a590055375a30b23c40299d3"
-uuid = "efce3f68-66dc-5838-9240-27a6d6f5f9b6"
-version = "0.5.5"
 
 [[deps.XML2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libiconv_jll", "Pkg", "Zlib_jll"]
@@ -1666,14 +1517,16 @@ version = "1.4.1+0"
 # ╠═5d1ad6b3-fd01-401d-a66e-5d65d5b9294d
 # ╟─519c9a52-0283-46f5-8d59-27d986efe602
 # ╠═cf6385e0-2457-47c9-8758-1d921a945a3c
-# ╟─249f095a-64c0-43b6-8538-07fff270e47a
+# ╠═249f095a-64c0-43b6-8538-07fff270e47a
 # ╠═9077f137-2458-44a7-9050-fb23b3821020
 # ╟─be646bcf-2167-4a9e-b7d2-00c5490e97f9
 # ╠═a394eec7-bbcf-4a95-8018-dd1217e81669
 # ╟─8dfa8d77-1110-4282-b868-38ab979f3f4f
 # ╟─64b9e905-600f-4db2-b2c6-3a20e2fa82f5
-# ╟─7e323ae2-f633-424d-9571-5292d800624a
+# ╟─52cf2501-83e6-4bea-a921-112de9381372
 # ╠═d8dfc46b-e6c1-4e0b-a84b-c6e7ef8fcdb5
+# ╟─f68a02fb-1d38-4dff-8187-1a88b73c9af0
+# ╠═f3a44c86-99e0-4ce5-a331-f6ebf983c77f
 # ╟─5960377c-d313-46e6-8826-e14e2c629bc5
 # ╟─c4be1d8d-d65d-4474-99ef-860d35fb3396
 # ╠═86857496-fc82-4af6-aa3c-2d8c11a54dcb
@@ -1688,6 +1541,6 @@ version = "1.4.1+0"
 # ╠═34e5f062-dd38-44b4-bfc2-06213d2e3b44
 # ╠═5a5111f3-77d8-4dde-9ca5-3c50837b7b92
 # ╟─091680d2-f391-4be8-a29e-86c1277fec31
-# ╟─68e4f7de-ed02-4b56-8d85-00025ed64cb7
+# ╟─af432d67-dfc7-4856-a3e2-781595d4a955
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
