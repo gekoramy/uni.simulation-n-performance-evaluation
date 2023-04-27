@@ -48,15 +48,6 @@ const seed = Random.Xoshiro(7)
 # ╔═╡ c780d252-40cc-413e-aea1-3595a87fa13c
 const xs = readdlm("data_ex1.csv", '\n', Float64) |> vec
 
-# ╔═╡ 62e33d74-71f7-4935-a4b1-fc598b8feb43
-md"""
-!!! note
-
-    The ``\rm CoV`` and Lorenz curve gap are frequently used measures of variation, rescaled to be invariant by change of scale.
-
-    They apply to a **positive** data set
-"""
-
 # ╔═╡ b25b3b96-8063-4084-be12-da675fa97a5d
 md"""
 ```math
@@ -1507,7 +1498,6 @@ version = "1.4.1+0"
 # ╠═dbef143d-1813-4ba6-85fb-96102352c139
 # ╠═477749dd-7a7a-4987-b581-060ab29984ad
 # ╠═c780d252-40cc-413e-aea1-3595a87fa13c
-# ╟─62e33d74-71f7-4935-a4b1-fc598b8feb43
 # ╟─b25b3b96-8063-4084-be12-da675fa97a5d
 # ╠═5d1ad6b3-fd01-401d-a66e-5d65d5b9294d
 # ╟─519c9a52-0283-46f5-8d59-27d986efe602
