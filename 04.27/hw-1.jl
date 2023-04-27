@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.22
+# v0.19.25
 
 using Markdown
 using InteractiveUtils
@@ -134,14 +134,14 @@ Markdown.parse("""
 
 # ╔═╡ 64b9e905-600f-4db2-b2c6-3a20e2fa82f5
 md"""
-!!! warning
+!!! note
 
     Discuss the source of the difference between the Lorenz curve gap and Jain's fairness index
 """
 
 # ╔═╡ 52cf2501-83e6-4bea-a921-112de9381372
 md"""
-JFI and LCG are both measures of dispersion, but approach the problem from different angles.
+JFI and LCG are both measures of dispersion, but they approach the problem from different angles.
 As the dispersion of the dataset increases
 - the LCG increases
 - the JFI decreases
@@ -173,7 +173,7 @@ end
 
 # ╔═╡ f68a02fb-1d38-4dff-8187-1a88b73c9af0
 md"""
-For example, if we exclude a few of these values from the dataset
+For example, if we exclude a few of these values from the dataset, then:
 - the JFI would increase significantly
 - the LCG would decrease slightly
 """
@@ -316,10 +316,12 @@ end
 md"""
 !!! note
 
-    Since we have multiple CIs at same level ``\gamma``, we have to take the union
+	Comparison between CI from asymptotic method and CI from bootstrap method
 """
 
 # ╔═╡ 34e5f062-dd38-44b4-bfc2-06213d2e3b44
+# ╠═╡ disabled = true
+#=╠═╡
 begin
     local μ95L = minimum([x[95][1] for x in [asym, boot]])
     local μ95U = maximum([x[95][2] for x in [asym, boot]])
@@ -333,6 +335,7 @@ begin
     ```
     """)
 end
+  ╠═╡ =#
 
 # ╔═╡ 5a5111f3-77d8-4dde-9ca5-3c50837b7b92
 begin
@@ -358,9 +361,9 @@ end
 
 # ╔═╡ 091680d2-f391-4be8-a29e-86c1277fec31
 md"""
-!!! warning
+!!! note
 
-  Discuss the results
+	Discuss the results
 """
 
 # ╔═╡ af432d67-dfc7-4856-a3e2-781595d4a955
@@ -369,7 +372,7 @@ The 95- and 99-level CIs returned by the bootstrap method and the 95- and 99-lev
 The extremes and the size vary by negligible factors.
 
 The reliability of the bootstrap method depends on the proportions of ``n`` which is sufficiently large.
-The asymptotic method assumes instead that ``\hat \mu`` follows a normal distribution, a realistic assumption because of the central limit theorem.
+The asymptotic method instead assumes that ``\hat \mu`` follows a normal distribution, a realistic assumption because of the central limit theorem.
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -396,7 +399,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.5"
 manifest_format = "2.0"
-project_hash = "8696f60b8c10ed6d9672b579c74ea5dbeeab1500"
+project_hash = "50ed612d7b5d5ee5e348385c090d18abfc3bfb01"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
@@ -1517,7 +1520,7 @@ version = "1.4.1+0"
 # ╠═5d1ad6b3-fd01-401d-a66e-5d65d5b9294d
 # ╟─519c9a52-0283-46f5-8d59-27d986efe602
 # ╠═cf6385e0-2457-47c9-8758-1d921a945a3c
-# ╠═249f095a-64c0-43b6-8538-07fff270e47a
+# ╟─249f095a-64c0-43b6-8538-07fff270e47a
 # ╠═9077f137-2458-44a7-9050-fb23b3821020
 # ╟─be646bcf-2167-4a9e-b7d2-00c5490e97f9
 # ╠═a394eec7-bbcf-4a95-8018-dd1217e81669
