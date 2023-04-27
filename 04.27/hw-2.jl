@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.22
+# v0.19.25
 
 using Markdown
 using InteractiveUtils
@@ -94,14 +94,14 @@ begin
 end
 
 # ╔═╡ 35a2d5ab-ff2d-4eca-985b-022c70478e2f
-function rejectiong_sampling()
+function rejection_sampling()
     IterTools.repeatedly(() -> rand(seed, Uniform(-bound, bound))) |>
     Filter(u -> rand(seed, Uniform(0, M)) < g(u)) |>
     first
 end
 
 # ╔═╡ 6c34d924-1c8f-44d3-b3f1-31771ef2c6d5
-const ys = IterTools.repeatedly(rejectiong_sampling, 100_000) |> collect
+const ys = IterTools.repeatedly(rejection_sampling, 100_000) |> collect
 
 # ╔═╡ e086b1f9-b2b2-43c7-9bf5-aeecb9356526
 begin
@@ -112,10 +112,15 @@ begin
     ylabel!("P(x)")
 end
 
+# ╔═╡ 2c5445b3-1cd4-40a2-8d01-cf1c80b80ecf
+md"""
+---
+"""
+
 # ╔═╡ 5d1ad6b3-fd01-401d-a66e-5d65d5b9294d
 begin
     const n = 1000
-    const ds = IterTools.repeatedly(rejectiong_sampling, n) |> collect
+    const ds = IterTools.repeatedly(rejection_sampling, n) |> collect
 end
 
 # ╔═╡ 1e35a93e-1260-42ad-8f1f-fe6d58ffb1a1
@@ -1309,6 +1314,7 @@ version = "1.4.1+0"
 # ╠═35a2d5ab-ff2d-4eca-985b-022c70478e2f
 # ╠═6c34d924-1c8f-44d3-b3f1-31771ef2c6d5
 # ╠═e086b1f9-b2b2-43c7-9bf5-aeecb9356526
+# ╟─2c5445b3-1cd4-40a2-8d01-cf1c80b80ecf
 # ╠═5d1ad6b3-fd01-401d-a66e-5d65d5b9294d
 # ╟─1e35a93e-1260-42ad-8f1f-fe6d58ffb1a1
 # ╠═86857496-fc82-4af6-aa3c-2d8c11a54dcb

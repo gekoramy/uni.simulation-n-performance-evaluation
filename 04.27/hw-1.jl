@@ -146,8 +146,8 @@ As the dispersion of the dataset increases
 - the LCG increases
 - the JFI decreases
 
-Because of the quadratic factor, JFI is more sensitive to the higher values of the dataset and thus to any large-value outliers.
-In contrast, the LCG is more stable because it gives equal weight to small-value outliers and large-value outliers.
+Because of the quadratic factor, JFI is more sensitive to outliers.
+In contrast, the LCG is more stable because it gives equal weight to every sample.
 
 In this case:
 - the JFI value suggests that there is a significant amount of inequality in the dataset
@@ -176,6 +176,9 @@ md"""
 For example, if we exclude a few of these values from the dataset, then:
 - the JFI would increase significantly
 - the LCG would decrease slightly
+
+Consider the ordered dataset.
+The graph below shows how JFI and LCG change when the first ``n`` elements of the ordered dataset are included.
 """
 
 # ╔═╡ f3a44c86-99e0-4ce5-a331-f6ebf983c77f
@@ -183,9 +186,9 @@ begin
     local ts = 2497:2500
     plot(ts, t -> jfi(sort(xs)[1:t]), label = "JFI", markershape = :hexagon)
     plot!(ts, t -> lcg(sort(xs)[1:t]), label = "LCG", markershape = :hexagon)
-    xticks!(ts)
+    xticks!(ts, map(t -> "1..$t", ts))
     yticks!(range(0.4, stop = 0.5, step = 0.0025))
-    xlabel!("sorted dataset [1:x]")
+    xlabel!("1 up to n")
 end
 
 # ╔═╡ 5960377c-d313-46e6-8826-e14e2c629bc5
@@ -319,23 +322,12 @@ md"""
 	Comparison between CI from asymptotic method and CI from bootstrap method
 """
 
-# ╔═╡ 34e5f062-dd38-44b4-bfc2-06213d2e3b44
-# ╠═╡ disabled = true
-#=╠═╡
-begin
-    local μ95L = minimum([x[95][1] for x in [asym, boot]])
-    local μ95U = maximum([x[95][2] for x in [asym, boot]])
-
-    local μ99L = minimum([x[99][1] for x in [asym, boot]])
-    local μ99U = maximum([x[99][2] for x in [asym, boot]])
-
-    Markdown.parse("""
-    ```math
-    \\hat \\mu = $(sp(μ)) \\in [$(sp(μ95L)), $(sp(μ95U))]_{.95} \\subset [$(sp(μ99L)), $(sp(μ99U))]_{.99}
-    ```
-    """)
-end
-  ╠═╡ =#
+# ╔═╡ 6d3667c5-d34e-412c-b62a-8b0e8dfa6eb7
+md"""
+In this case, at the same confidence level the "asymptotic" CIs are completely included in the "bootstrap" CIs.
+Thus, the "correct" CIs are those returned by bootstrap.
+The CIs returned by the asymptotic method are in fact equivalent to the intersection of 2 CIs of the same confidence level, so they actually have a lower confidence level.
+"""
 
 # ╔═╡ 5a5111f3-77d8-4dde-9ca5-3c50837b7b92
 begin
@@ -1541,7 +1533,7 @@ version = "1.4.1+0"
 # ╟─c928a401-3291-49ba-be56-ece886e6ab0d
 # ╠═3672eecb-2cfb-4217-a806-1066bd473f8a
 # ╟─c270ee13-3ab2-4df8-ae9f-ff2959aa3046
-# ╠═34e5f062-dd38-44b4-bfc2-06213d2e3b44
+# ╟─6d3667c5-d34e-412c-b62a-8b0e8dfa6eb7
 # ╠═5a5111f3-77d8-4dde-9ca5-3c50837b7b92
 # ╟─091680d2-f391-4be8-a29e-86c1277fec31
 # ╟─af432d67-dfc7-4856-a3e2-781595d4a955
