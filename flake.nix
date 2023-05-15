@@ -15,6 +15,7 @@
             buildInputs = with pkgs; [
               inkscape
               julia-bin
+              jq
               pandoc
               python311
               texlive.combined.scheme-full
