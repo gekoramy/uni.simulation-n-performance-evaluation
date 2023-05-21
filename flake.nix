@@ -13,7 +13,11 @@
         {
           devShell = pkgs.mkShell {
             buildInputs = with pkgs; [
+              inkscape
               julia-bin
+              pandoc
+              python311
+              texlive.combined.scheme-full
             ];
           };
         }
