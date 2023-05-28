@@ -306,13 +306,16 @@ id2axs['A'].set_title(f'${seeds[0]} \\ldots {seeds[-1]} \\vdash p \\in [0, 1]$ /
 plt.show()
 
 # %% [markdown]
-# As $r \to \infty$, the probability of failing to deliver to $D$ increases.
-# As $N \to \infty$, the network's reliability improves significantly.
-# Between these two factors, the influence of $N$ on the final probability is much more pronounced.
+# In this graph, we compare two very different configurations.
+# Obviously, as $p$ increases, the probability of failing to reach $D$ increases.
 #
-# Comparing the 2 configuration: namely $(r = 2, N = 2), (r = 5, N = 5)$.
-# Despite the former having a smaller $r$ than the latter, the probability of failing to deliver to $D$ is always smaller in the latter.
-# The reason has to be attributed to the larger value of $N$ in the latter configuration.
+# In $\{ r = 2, N = 2 \}$ the growth is almost linear.
+# In $\{ r = 5, N = 5 \}$ the growth is more concentrated towards higher values of $p$.
+# Among the two configurations, $\{ r = 5, N = 5 \}$ is the most "robust".
+#
+# Furthermore, $\{ r = 5, N = 5 \}$ has the lowest probability of failing to reach $D$.
+# This statement holds for any value of $p$ - excluding the extreme cases.
+# In fact, when $p \to 0$ or $p \to 1$ the two configurations are obviously comparable.
 
 # %% [markdown]
 # ## Avg # of successful nodes at each stage
@@ -392,4 +395,14 @@ f.subplots_adjust(wspace=0)
 plt.show()
 
 # %% [markdown]
-# As the graph suggests, the probability of error at $D$ is inversely correlated to the average number of successful nodes at each stage
+# From the above plots, we can infer that the average number of successful nodes varies monotonically stage after stage.
+# This makes sense because the probability of a successful node strictly depends on the number of relays.
+# The higher [lower] the number of relays at stage $i$, the higher [lower] the number of successful nodes at stage $i + 1$.
+#
+# Fixed $p = \frac 1 2$, we have:
+# $$
+# \mathbf P \Big[ {\rm lost} \ \Big|\ \{r = 5, N = 5\}\Big] < \mathbf P \Big[ {\rm lost}\ \Big|\ \{r = 2, N = 2\} \Big]
+# $$
+#
+# From the above comparison, we can infer that the probability of failing to reach $D$ is inversely proportional to the average number of successful nodes at each stage.
+# The higher the number of relays, the higher the probability of reaching $D$.
