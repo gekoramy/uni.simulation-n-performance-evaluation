@@ -61,13 +61,13 @@ set_matplotlib_formats('svg')
 # (*Hint*: remember that the probability to fail the reception of a packet is $p^k$, where $k$ is the number of nodes that hold a copy of the packet at the previous stage.)
 #
 # 2. Repeat the above process for different values of the link error probability $p$.
-# Plot the probability of error at $D$ against $p$ for the two cases $\Set{r = 2, N = 2}$, and $\Set{r = 5, N = 5}$.
+# Plot the probability of error at $D$ against $p$ for the two cases $\{r = 2, N = 2\}$, and $\{r = 5, N = 5\}$.
 # Plot also the 95%-confidence intervals (e.g., as error bars) for each simulation point.
 #
 # 3. Compare your results against the theoretical error curves provided in the file `theory_ex_flooding.csv`
 # ( column 1: values of $p$
-# ; column 2: probability of error at $D$ for $\Set{r = 2, N = 2}$
-# ; column 3: probability of error at $D$ for $\Set{r = 5, N = 5}$ ).
+# ; column 2: probability of error at $D$ for $\{r = 2, N = 2\}$
+# ; column 3: probability of error at $D$ for $\{r = 5, N = 5\}$ ).
 #
 # 4. Draw conclusions on the behavior of the network for the chosen values of $r$ and $N$.
 #
@@ -114,7 +114,7 @@ doctest.testmod()
 # %% [markdown]
 # ## Compare networks
 # $$
-# \Set{ r = 2, N = 2 } \quad \text{vs} \quad \Set{ r = 5, N = 5 }
+# \{ r = 2, N = 2 \} \quad \text{vs} \quad \{ r = 5, N = 5 \}
 # $$
 # with
 # $$
@@ -197,7 +197,7 @@ plt.show()
 # %% [markdown]
 # ## Compare networks
 # $$
-# \Set{ r = 2, N = 2 } \quad \text{vs} \quad \Set{ r = 5, N = 5 }
+# \{ r = 2, N = 2 \} \quad \text{vs} \quad \{ r = 5, N = 5 \}
 # $$
 # with
 # $$
