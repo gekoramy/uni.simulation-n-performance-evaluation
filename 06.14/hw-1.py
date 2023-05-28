@@ -142,6 +142,7 @@ doctest.testmod()
 # %%
 gamma: float = .95
 nets: list[tuple[int, int]] = [(2, 2), (5, 5)]
+p: float = .5
 
 # %%
 seeds: NDArray[int] = np.fromiter(mit.sieve(500_000), int, 5_001)[1:]
@@ -150,7 +151,7 @@ seeds: NDArray[int] = np.fromiter(mit.sieve(500_000), int, 5_001)[1:]
 net2irs: dict[tuple[int, int], NDArray[bool]] = {
     (r, n): np.asarray(
         [
-            0 == simulate_flooding(seed, .5, r, n)[-1]
+            0 == simulate_flooding(seed, p, r, n)[-1]
             for seed in seeds
         ],
         bool
@@ -191,7 +192,7 @@ for i, net in enumerate(nets):
 
 a.legend(loc='center')
 a.set_ylabel(r'$\mathbf{P}\left[{\rm lost}\right]$')
-a.set_title(f'${seeds[0]} \\ldots {seeds[-1]} \\vdash {len(seeds)}$ samples')
+a.set_title(f'${seeds[0]} \\ldots {seeds[-1]} \\vdash p = {p}$ // {len(seeds)} samples')
 plt.show()
 
 # %% [markdown]
@@ -291,7 +292,7 @@ id2axs['D'].set_ylim(0.78, 1.01)
 id2axs['A'].legend(loc='upper left')
 id2axs['A'].set_ylabel(r'$\mathbf{P}\left[{\rm lost}\right]$')
 id2axs['A'].set_xlabel(r'$p$')
-id2axs['A'].set_title(f'${seeds[0]} \\ldots {seeds[-1]} \\vdash {len(seeds)} \\cdot {len(ps)}$ samples')
+id2axs['A'].set_title(f'${seeds[0]} \\ldots {seeds[-1]} \\vdash p \\in [0, 1]$ // ${len(seeds)} \\cdot {len(ps)}$ samples')
 plt.show()
 
 # %% [markdown]
@@ -311,7 +312,7 @@ seeds: NDArray[int] = np.fromiter(mit.sieve(500_000), int, 5_001)[1:]
 
 # %%
 net2irs: dict[tuple[int, int], NDArray[...]] = {
-    (r, n): np.vstack([simulate_flooding(seed, .5, r, n) for seed in seeds])
+    (r, n): np.vstack([simulate_flooding(seed, p, r, n) for seed in seeds])
     for r, n in nets
 }
 
@@ -371,7 +372,7 @@ f.legend(
     it.chain(*[lines for axs in axss for lines, labels in [axs[0].get_legend_handles_labels()]]),
     it.chain(*[labels for axs in axss for lines, labels in [axs[0].get_legend_handles_labels()]]),
 )
-f.suptitle(f'${seeds[0]} \\ldots {seeds[-1]} \\vdash {len(seeds)}$ samples')
+f.suptitle(f'${seeds[0]} \\ldots {seeds[-1]} \\vdash p = {p}$ // {len(seeds)} samples')
 f.subplots_adjust(wspace=0)
 plt.show()
 
