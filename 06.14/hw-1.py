@@ -16,6 +16,7 @@
 
 # %%
 from typing import Iterable
+from matplotlib_inline.backend_inline import set_matplotlib_formats
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 from numpy.typing import NDArray
 
@@ -26,6 +27,9 @@ import more_itertools as mit
 import itertools as it
 import scipy as sp
 import matplotlib.pyplot as plt
+
+# %%
+set_matplotlib_formats('svg')
 
 
 # %% [markdown]
