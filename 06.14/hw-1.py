@@ -108,6 +108,8 @@ def simulate_flooding(seed: int, p: float, r: int, n: int) -> NDArray[int]:
     return np.fromiter(it.accumulate(network, next_stage, initial=1), int)
 
 
+shop: NDArray[int] = np.fromiter(mit.sieve(500_000), int)[1:]
+
 # %%
 doctest.testmod()
 
@@ -145,7 +147,7 @@ nets: list[tuple[int, int]] = [(2, 2), (5, 5)]
 p: float = .5
 
 # %%
-seeds: NDArray[int] = np.fromiter(mit.sieve(500_000), int, 5_001)[1:]
+seeds: NDArray[int] = shop[:5_000]
 
 # %%
 net2irs: dict[tuple[int, int], NDArray[bool]] = {
@@ -210,7 +212,7 @@ plt.show()
 file: NDArray[np.dtype((float, 3))] = np.genfromtxt('theory_ex_flooding.csv', delimiter=',')
 
 # %%
-seeds: NDArray[int] = np.fromiter(mit.sieve(500_000), int, 3_001)[1:]
+seeds: NDArray[int] = shop[:3_000]
 ps: NDArray[float] = np.linspace(0, 1, 20)
 
 # %%
@@ -316,7 +318,7 @@ plt.show()
 # ## Avg # of successful nodes at each stage
 
 # %%
-seeds: NDArray[int] = np.fromiter(mit.sieve(500_000), int, 5_001)[1:]
+seeds: NDArray[int] = shop[:5_000]
 
 # %%
 net2irs: dict[tuple[int, int], NDArray[...]] = {
