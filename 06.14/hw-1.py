@@ -302,3 +302,78 @@ plt.show()
 # Comparing the 2 configuration: namely $(r = 2, N = 2), (r = 5, N = 5)$.
 # Despite the former having a smaller $r$ than the latter, the probability of failing to deliver to $D$ is always smaller in the latter.
 # The reason has to be attributed to the larger value of $N$ in the latter configuration.
+
+# %% [markdown]
+# ## Avg # of successful nodes at each stage
+
+# %%
+seeds: NDArray[int] = np.fromiter(mit.sieve(500_000), int, 5_001)[1:]
+
+# %%
+net2irs: dict[tuple[int, int], NDArray[...]] = {
+    (r, n): np.vstack([simulate_flooding(seed, .5, r, n) for seed in seeds])
+    for r, n in nets
+}
+
+# %%
+b: int = len(seeds)
+net2grand_mean_v_delta: dict[tuple[int, int], NDArray[np.dtype((float, 3))]] = {
+    net: np.vstack([grand_mean, v, delta]).T
+    for net, irs in net2irs.items()
+    for grand_mean in [np.mean(irs, axis=0)]
+    for v in [np.sum((irs - grand_mean) ** 2, axis=0) / (b - 1)]
+    for delta in [sp.stats.t.ppf((1 + gamma) / 2, df=b - 1) * np.sqrt(v / b)]
+}
+
+# %%
+f: plt.Figure
+axss: list[list[plt.Axes]]
+f, axss = plt.subplots(
+    len(nets),
+    max((len(grand_mean_v_delta) for grand_mean_v_delta in net2grand_mean_v_delta.values())),
+    sharey='row',
+    figsize=(12, 5 * 2),
+    subplot_kw={
+        'xticks': [],
+        'axisbelow': True,
+    }
+)
+
+for i, net, axs in zip(it.count(), nets, axss):
+    (r, n) = net
+    grand_mean_v_delta: NDArray[np.dtype((float, 3))] = net2grand_mean_v_delta[net]
+
+    for stage, [grand_mean, v, delta], a in zip(it.count(), grand_mean_v_delta, axs):
+        a.axhspan(
+            grand_mean - delta,
+            grand_mean + delta,
+            alpha=.5,
+            color=f'C{i}',
+            label=f'CI {gamma}',
+        )
+        a.axhline(
+            grand_mean,
+            color=f'C{i}',
+            label=f'$r = {r}, n = {n}$',
+        )
+
+        a.grid(visible=True, axis='y')
+        a.set_xlabel(f'#{stage}')
+
+        if stage == 0:
+            a.set_ylabel(r'$\mathbf{E}\left[{\rm success}\right]$')
+
+for a in it.chain(*axss):
+    if a.get_legend_handles_labels() == ([], []):
+        a.remove()
+
+f.legend(
+    it.chain(*[lines for axs in axss for lines, labels in [axs[0].get_legend_handles_labels()]]),
+    it.chain(*[labels for axs in axss for lines, labels in [axs[0].get_legend_handles_labels()]]),
+)
+f.suptitle(f'${seeds[0]} \\ldots {seeds[-1]} \\vdash {len(seeds)}$ samples')
+f.subplots_adjust(wspace=0)
+plt.show()
+
+# %% [markdown]
+# As the graph suggests, the probability of error at $D$ is inversely correlated to the average number of successful nodes at each stage
