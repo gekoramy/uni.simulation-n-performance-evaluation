@@ -56,7 +56,7 @@ set_matplotlib_formats('svg')
 # (i.e., the probability that *no* transmissions from any of the $k$ relays at stage $i$ is received by the node at stage $i + 1$).
 #
 # 1. Use Monte-Carlo simulation to estimate the probability that a packet transmitted by the source $S$ *fails to reach* the destination $D$.
-# Consider two different cases: $r = 2, N = 2$, and $r = 5, N = 5$.
+# Consider two different cases: $\{r = 2, N = 2\}$, and $\{r = 5, N = 5\}$.
 # For each monte-carlo trial, simulate the transmission of the packet by $S$, the correct or incorrect reception by the relays at stage 1, the retransmission of the packet towards the next stages, and so forth until the packet reaches $D$ or is lost in the process.
 # (*Hint*: remember that the probability to fail the reception of a packet is $p^k$, where $k$ is the number of nodes that hold a copy of the packet at the previous stage.)
 #
