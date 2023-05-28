@@ -258,21 +258,21 @@ for a in id2axs.values():
             fmt='.',
             alpha=.5,
             color=f'C{i}',
-            label=f'$(r = {r}, n = {n})_{{{gamma}}}$',
+            label=f'$[r = {r}, n = {n} \\pm \\delta]_{{{gamma}}}$',
         )
 
     a.plot(
         file[:, 0],
         file[:, 1],
         alpha=.5,
-        label=f'Theoretical $(r = 2, n = 2)$',
+        label=f'Theoretical $r = 2, n = 2$',
     )
 
     a.plot(
         file[:, 0],
         file[:, 2],
         alpha=.5,
-        label=f'Theoretical $(r = 5, n = 5)$',
+        label=f'Theoretical $r = 5, n = 5$',
     )
 
 mark_inset(id2axs['A'], id2axs['B'], 1, 2)
