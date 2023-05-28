@@ -263,7 +263,6 @@ for a in id2axs.values():
             grand_means,
             deltas,
             fmt='.',
-            alpha=.5,
             color=f'C{i}',
             label=f'$[r = {r}, n = {n} \\pm \\delta]_{{{gamma}}}$',
         )
@@ -297,6 +296,9 @@ id2axs['C'].set_ylim(-0.01, 0.1)
 id2axs['D'].set_xlim(0.78, 1.01)
 id2axs['D'].set_ylim(0.78, 1.01)
 
+id2axs['A'].grid(visible=True, axis='both')
+id2axs['A'].set_yticks(np.linspace(0, 1, 11))
+id2axs['A'].set_xticks([1 / 10, 1 / 4, 2 / 4, 3 / 4, 9 / 10])
 id2axs['A'].legend(loc='upper left')
 id2axs['A'].set_ylabel(r'$\mathbf{P}\left[{\rm lost}\right]$')
 id2axs['A'].set_xlabel(r'$p$')
@@ -375,7 +377,7 @@ for i, net, axs in zip(it.count(), nets, axss):
         a.set_xlabel(f'#{stage}')
 
         if stage == 0:
-            a.set_ylabel(r'$\mathbf{E}\left[{\rm success}\right]$')
+            a.set_ylabel(r'$\mathbf{E}\left[{\rm successes}\right]$')
 
 for a in it.chain(*axss):
     if a.get_legend_handles_labels() == ([], []):
