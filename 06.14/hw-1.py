@@ -243,7 +243,13 @@ net2p2grand_mean_v_delta: dict[tuple[int, int], dict[float, tuple[float, float, 
 
 # %%
 id2axs: dict[str, plt.Axes]
-_, id2axs = plt.subplot_mosaic([['A', 'A', 'A'], ['A', 'A', 'A'], ['B', 'C', 'D']], figsize=(12, 5 * 2))
+_, id2axs = plt.subplot_mosaic(
+    [['A', 'A', 'A'],
+     ['A', 'A', 'A'],
+     ['B', 'C', 'D']],
+    figsize=(12, 5 * 2),
+    subplot_kw={'axisbelow': True},
+)
 
 for a in id2axs.values():
     for i, net in enumerate(nets):
@@ -275,6 +281,8 @@ for a in id2axs.values():
         alpha=.5,
         label=f'Theoretical $r = 5, n = 5$',
     )
+
+    a.grid(visible=True, axis='y')
 
 mark_inset(id2axs['A'], id2axs['B'], 1, 2)
 mark_inset(id2axs['A'], id2axs['C'], 1, 2)
