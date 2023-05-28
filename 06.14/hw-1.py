@@ -241,10 +241,10 @@ net2p2grand_mean_v_delta: dict[tuple[int, int], dict[float, tuple[float, float, 
 }
 
 # %%
-axs: dict[str, plt.Axes]
-_, axs = plt.subplot_mosaic([['A', 'A', 'A'], ['A', 'A', 'A'], ['B', 'C', 'D']], figsize=(12, 5 * 2))
+id2axs: dict[str, plt.Axes]
+_, id2axs = plt.subplot_mosaic([['A', 'A', 'A'], ['A', 'A', 'A'], ['B', 'C', 'D']], figsize=(12, 5 * 2))
 
-for a in axs.values():
+for a in id2axs.values():
     for i, net in enumerate(nets):
         (r, n) = net
         p2grand_mean_v_delta: dict[float, tuple[float, float, float]] = net2p2grand_mean_v_delta[net]
@@ -275,24 +275,24 @@ for a in axs.values():
         label=f'Theoretical $(r = 5, n = 5)$',
     )
 
-mark_inset(axs['A'], axs['B'], 1, 2)
-mark_inset(axs['A'], axs['C'], 1, 2)
-mark_inset(axs['A'], axs['D'], 1, 2)
+mark_inset(id2axs['A'], id2axs['B'], 1, 2)
+mark_inset(id2axs['A'], id2axs['C'], 1, 2)
+mark_inset(id2axs['A'], id2axs['D'], 1, 2)
 
-axs['B'].set_xlim(-0.01, 0.22)
-axs['B'].set_ylim(-0.01, 0.22)
+id2axs['B'].set_xlim(-0.01, 0.22)
+id2axs['B'].set_ylim(-0.01, 0.22)
 
-axs['C'].set_xlim(0.29, 0.51)
-axs['C'].set_ylim(-0.01, 0.1)
+id2axs['C'].set_xlim(0.29, 0.51)
+id2axs['C'].set_ylim(-0.01, 0.1)
 
-axs['D'].set_xlim(0.78, 1.01)
-axs['D'].set_ylim(0.78, 1.01)
+id2axs['D'].set_xlim(0.78, 1.01)
+id2axs['D'].set_ylim(0.78, 1.01)
 
-axs['A'].legend(loc='upper left')
-axs['A'].set_ylabel(r'$\mathbf{P}\left[{\rm lost}\right]$')
-axs['A'].set_xlabel(r'$p$')
-axs['A'].set_title(f'${seeds[0]} \\ldots {seeds[-1]} \\vdash {len(seeds)} \\cdot {len(ps)}$ samples')
-plt.savefig('test.pdf')
+id2axs['A'].legend(loc='upper left')
+id2axs['A'].set_ylabel(r'$\mathbf{P}\left[{\rm lost}\right]$')
+id2axs['A'].set_xlabel(r'$p$')
+id2axs['A'].set_title(f'${seeds[0]} \\ldots {seeds[-1]} \\vdash {len(seeds)} \\cdot {len(ps)}$ samples')
+plt.show()
 
 # %% [markdown]
 # As $r \to \infty$, the probability of failing to deliver to $D$ increases.
