@@ -76,14 +76,14 @@ set_matplotlib_formats('svg')
 #
 # 6. *Facultative*: Repeat point 1 by applying post-stratification on your computed average probability of error.
 # You can choose the number of relays that get the packet at Stage 1 as the stratum variable
-# (i.e., you have $N + 1$ strata, as the number of relays that get the packet correctly from the source can be $0, 1, \ldots , N$ ).
+# (i.e., you have $N + 1$ strata, as the number of relays that get the packet correctly from the source can be $0, 1, \ldots, N$ ).
 # How does your precision improve?
 
 # %%
 def simulate_flooding(seed: int, p: float, r: int, n: int) -> NDArray[int]:
     """
     Reproducible simulation of multi-hop network with flooding policy
-    For each stage, it returns the total number of missing packets
+    For each stage, it returns the total number of succesful nodes
 
     >>> simulate_flooding(3, .8, 10, 10) == simulate_flooding(3, .8, 10, 10)
     array([ True,  True,  True,  True,  True,  True,  True,  True,  True,
@@ -201,7 +201,7 @@ plt.show()
 # $$
 # with
 # $$
-# p \in { 0.1, 0.3, 0.5, 0.7, 0.9 }
+# p \in \{ 0, \frac 1 {20}, \frac 2 {20}, \cdots, \frac {18} {20}, \frac {19} {20} , 1 \}
 # $$
 # against theoretical values
 
@@ -295,10 +295,10 @@ axs['A'].set_title(f'${seeds[0]} \\ldots {seeds[-1]} \\vdash {len(seeds)} \\cdot
 plt.savefig('test.pdf')
 
 # %% [markdown]
-# As $n \to \infty$, the probability of failing to deliver to $D$ increases.
-# As $r \to \infty$, the network's reliability improves significantly.
-# Between these two factors, the influence of $r$ on the final probability is much more pronounced.
+# As $r \to \infty$, the probability of failing to deliver to $D$ increases.
+# As $N \to \infty$, the network's reliability improves significantly.
+# Between these two factors, the influence of $N$ on the final probability is much more pronounced.
 #
 # Comparing the 2 configuration: namely $(r = 2, N = 2), (r = 5, N = 5)$.
-# Despite the former having a smaller $N$ than the latter, the probability of failing to deliver to $D$ is always smaller in the latter.
-# The reason has to be attributed to the larger value of $r$ in the latter configuration.
+# Despite the former having a smaller $r$ than the latter, the probability of failing to deliver to $D$ is always smaller in the latter.
+# The reason has to be attributed to the larger value of $N$ in the latter configuration.
