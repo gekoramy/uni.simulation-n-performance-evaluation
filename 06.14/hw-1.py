@@ -406,3 +406,57 @@ plt.show()
 #
 # From the above comparison, we can infer that the probability of failing to reach $D$ is inversely proportional to the average number of successful nodes at each stage.
 # The higher the number of relays, the higher the probability of reaching $D$.
+
+# %% [markdown]
+# ## Post-stratification
+# Let $Y$ be the number of successful nodes at stage 1.
+# We have:
+# $$
+# Y \sim {\rm Bin}(n = N, p = p)
+# $$
+#
+# Knowing this, we can estimate the probability of failing to reach $D$ by applying post-stratification technique
+# $$
+# \mathbf E \big[ X \big] = \sum_y \mathbf E \big[ X\ |\ Y = y \big] \cdot \mathbf P \big\{ Y = y \big\}
+# $$
+#
+# Comparing
+# $$
+# \{ r = 2, N = 2 \} \quad \text{vs} \quad \{ r = 5, N = 5 \}
+# $$
+# with fixed $p = \frac 1 2$
+
+# %%
+seeds: NDArray[int] = shop[:5_000]
+
+# %%
+net2irs: dict[tuple[int, int], NDArray[...]] = {
+    (r, n): np.asarray(
+        [
+            (sim[1], 0 == sim[-1])
+            for seed in seeds
+            for sim in [simulate_flooding(seed, p, r, n)]
+        ]
+    )
+    for r, n in nets
+}
+
+# %% [markdown]
+# $$
+# \begin{bmatrix} A & B \\ C & D \end{bmatrix}
+# \times
+# \begin{bmatrix} x & y \end{bmatrix}
+# =
+# \begin{bmatrix} (x) A + (y) B \\ (x) C + (y) D \end{bmatrix}
+# $$
+
+# %%
+b: int = len(seeds)
+# TODO
+# net2grand_mean_v_delta: dict[tuple[int, int], NDArray[np.dtype((float, 3))]] = {
+#     net: np.vstack([grand_mean, v, delta]).T
+#     for net, irs in net2irs.items()
+#     for grand_mean in [ [ val * sp.stats.binom.pmf(k=y, n=n, p=p) for y, val in irs] ]
+#     for v in [np.sum((irs - grand_mean) ** 2, axis=0) / (b - 1)]
+#     for delta in [sp.stats.t.ppf((1 + gamma) / 2, df=b - 1) * np.sqrt(v / b)]
+# }
