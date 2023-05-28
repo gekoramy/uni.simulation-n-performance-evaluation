@@ -191,7 +191,7 @@ for i, net in enumerate(nets):
     a.set_xticks([])
 
 a.legend(loc='center')
-a.set_ylabel(r'$\mathbf{P}\left[{\rm lost}\right]$')
+a.set_ylabel(r'$\mathbf{P}\{{\rm lost}\}$')
 a.set_title(f'${seeds[0]} \\ldots {seeds[-1]} \\vdash p = {p}$ // {len(seeds)} samples')
 plt.show()
 
@@ -300,7 +300,7 @@ id2axs['A'].grid(visible=True, axis='both')
 id2axs['A'].set_yticks(np.linspace(0, 1, 11))
 id2axs['A'].set_xticks([1 / 10, 1 / 4, 2 / 4, 3 / 4, 9 / 10])
 id2axs['A'].legend(loc='upper left')
-id2axs['A'].set_ylabel(r'$\mathbf{P}\left[{\rm lost}\right]$')
+id2axs['A'].set_ylabel(r'$\mathbf{P}\{{\rm lost}\}$')
 id2axs['A'].set_xlabel(r'$p$')
 id2axs['A'].set_title(f'${seeds[0]} \\ldots {seeds[-1]} \\vdash p \\in [0, 1]$ // ${len(seeds)} \\cdot {len(ps)}$ samples')
 plt.show()
@@ -401,7 +401,7 @@ plt.show()
 #
 # Fixed $p = \frac 1 2$, we have:
 # $$
-# \mathbf P \Big[ {\rm lost} \ \Big|\ \{r = 5, N = 5\}\Big] < \mathbf P \Big[ {\rm lost}\ \Big|\ \{r = 2, N = 2\} \Big]
+# \mathbf P \Big\{ {\rm lost} \ \Big|\ \{r = 5, N = 5\}\Big\} < \mathbf P \Big\{ {\rm lost}\ \Big|\ \{r = 2, N = 2\} \Big\}
 # $$
 #
 # From the above comparison, we can infer that the probability of failing to reach $D$ is inversely proportional to the average number of successful nodes at each stage.
