@@ -114,14 +114,12 @@ shop: NDArray[int] = np.fromiter(mit.sieve(500_000), int)[1:]
 doctest.testmod()
 
 # %% [markdown]
-# ## Compare networks
+# ## $\mathbf{P}$ of failing to reach $D$
+# Comparing
 # $$
 # \{ r = 2, N = 2 \} \quad \text{vs} \quad \{ r = 5, N = 5 \}
 # $$
-# with
-# $$
-# p = \frac 1 2
-# $$
+# with fixed $p = \frac 1 2$
 #
 # Finite-horizon simulation
 #
@@ -198,13 +196,13 @@ a.set_title(f'${seeds[0]} \\ldots {seeds[-1]} \\vdash p = {p}$ // {len(seeds)} s
 plt.show()
 
 # %% [markdown]
-# ## Compare networks
+# Comparing
 # $$
 # \{ r = 2, N = 2 \} \quad \text{vs} \quad \{ r = 5, N = 5 \}
 # $$
-# with
+# with fixed
 # $$
-# p \in \{ 0, \frac 1 {20}, \frac 2 {20}, \cdots, \frac {18} {20}, \frac {19} {20} , 1 \}
+# p \in \left\{ 0, \frac 1 {20}, \frac 2 {20}, \cdots, \frac {18} {20}, \frac {19} {20} , 1 \right\}
 # $$
 # against theoretical values
 
@@ -316,6 +314,11 @@ plt.show()
 
 # %% [markdown]
 # ## Avg # of successful nodes at each stage
+# Comparing
+# $$
+# \{ r = 2, N = 2 \} \quad \text{vs} \quad \{ r = 5, N = 5 \}
+# $$
+# with fixed $p = \frac 1 2$
 
 # %%
 seeds: NDArray[int] = shop[:5_000]
