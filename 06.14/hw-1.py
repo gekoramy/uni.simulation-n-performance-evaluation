@@ -98,10 +98,7 @@ def simulate_flooding(seed: int, p: float, r: int, n: int) -> NDArray[int]:
     rng: np.random.Generator = np.random.default_rng(seed)
 
     def next_stage(relays: int, nodes: int) -> int:
-        node2packets: NDArray[np.dtype((float, relays))] = rng.random((nodes, relays))
-        # if p = 0 then it will return always false
-        node2failure: NDArray[bool] = np.all(node2packets < p, axis=1)
-        return nodes - np.count_nonzero(node2failure)
+        return rng.binomial(nodes, 1 - p ** relays)
 
     network: Iterable[int] = it.chain([n] * r, [1])
     return np.fromiter(it.accumulate(network, next_stage, initial=1), int)
