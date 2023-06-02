@@ -117,28 +117,65 @@ doctest.testmod()
 # $$
 # with fixed $p = \frac 1 2$
 #
-# Finite-horizon simulation
+# Finite-horizon simulation.
 #
-# We use independent replications technique
+# Let
+# $$
+# X \sim \text{Bernoulli}(p = \theta)
+# $$
+# where $\theta$ is the unknown probability of failing to read $D$.
 #
+# To estimate $\theta$ we generate $X_1, X_2, \ldots, X_m$ independent realizations.
+# Say we observe $w$ "successes" out of $m$
 # $$
-# Y_1\, Y_2\, \ldots\, Y_b
-# $$
-#
-# $$
-# \hat V = \frac 1 {b - 1} \sum_i^b (Y_i - \overline Y_b)^2
-# \qquad
-# \overline Z_b = \frac 1 b \sum_i^b Y_i
+# \hat \theta = \frac w m
 # $$
 #
+# A CI at level $\gamma$ for the "success" probability $\theta$ is:
 # $$
-# \left[ \overline Z_b \pm t_{b - 1, \frac {1 + \gamma} 2} \sqrt{\frac {\hat V} b} \right]_\gamma
+# \big[ L(w), U(w) \big]_\gamma
+# \quad
+# \begin{cases}
+# L(w) =
+# \begin{cases}
+# 0 & \text{if } w = 0
+# \\
+# \phi_{m, w - 1}\left( \frac {1 + \gamma} 2 \right) & \text{otherwise}
+# \end{cases}
+# \\
+# U(w) = 1 - L(m - w)
+# \end{cases}
+# $$
+# where
+# $$
+# \phi_{m, w}(\alpha) = \frac{m_1 f}{m_2 + m_1 f}
+# \quad
+# m_1 = 2(w + 1)
+# \quad
+# m_2 = 2(m - w)
+# \quad
+# 1 - \alpha = F_{m_1, m_2}(f)
 # $$
 
 # %%
 gamma: float = .95
 nets: list[tuple[int, int]] = [(2, 2), (5, 5)]
 p: float = .5
+
+
+# %%
+def ci(m: int, w: int) -> tuple[float, float]:
+    def phi(w: int, alpha: float) -> float:
+        m1: int = 2 * (w + 1)
+        m2: int = 2 * (m - w)
+        f: float = sp.stats.f.ppf(1 - alpha, dfn=m1, dfd=m2)
+        return m1 * f / (m2 + m1 * f)
+
+    def l(w: int) -> float:
+        return 0 if w == 0 else phi(w - 1, (1 + gamma) / 2)
+
+    return l(w), 1 - l(m - w)
+
 
 # %%
 seeds: NDArray[int] = shop[:5_000]
@@ -156,39 +193,36 @@ net2irs: dict[tuple[int, int], NDArray[bool]] = {
 }
 
 # %%
-b: int = len(seeds)
-net2grand_mean_v_delta: dict[tuple[int, int], tuple[float, float, float]] = {
-    net: (grand_mean, v, delta)
+m: int = len(seeds)
+
+net2mean_ci: dict[tuple[int, int], tuple[float, tuple[float, float]]] = {
+    net: (w / m, ci(m, w))
     for net, irs in net2irs.items()
-    for grand_mean in [np.mean(irs).item()]
-    for v in [sum((irs - grand_mean) ** 2) / (b - 1)]
-    for delta in [sp.stats.t.ppf((1 + gamma) / 2, df=b - 1) * math.sqrt(v / b)]
+    for w in [np.count_nonzero(irs)]
 }
 
 # %%
-a: plt.Axes
-_, a = plt.subplots(1, 1)
+ax: plt.Axes
+_, ax = plt.subplots(1, 1, subplot_kw={'xticks': []})
 
 for i, net in enumerate(nets):
     (r, n) = net
-    grand_mean, v, delta = net2grand_mean_v_delta[net]
-    a.axhspan(
-        grand_mean - delta,
-        grand_mean + delta,
+    mean, (lwr, upp) = net2mean_ci[net]
+    ax.axhspan(
+        lwr,
+        upp,
         alpha=.5,
         color=f'C{i}',
         label=f'CI {gamma}',
     )
-    a.axhline(
-        grand_mean,
+    ax.axhline(
+        mean,
         color=f'C{i}',
         label=f'$r = {r}, n = {n}$'
     )
-    a.set_xticks([])
 
-a.legend(loc='center')
-a.set_ylabel(r'$\mathbf{P}\{{\rm lost}\}$')
-a.set_title(f'${seeds[0]} \\ldots {seeds[-1]} \\vdash p = {p}$ // {len(seeds)} samples')
+ax.legend(loc='center')
+ax.set_title(f'${seeds[0]} \\ldots {seeds[-1]} \\vdash p = {p}$ // {len(seeds)} samples')
 plt.show()
 
 # %% [markdown]
@@ -210,9 +244,9 @@ seeds: NDArray[int] = shop[:3_000]
 ps: NDArray[float] = np.linspace(0, 1, 20)
 
 # %%
-net2p2irs: dict[tuple[int, int], dict[float, NDArray[bool]]] = {
-    (r, n): {
-        p: np.asarray(
+net2p2irs: dict[tuple[int, int], NDArray[...]] = {
+    (r, n): np.vstack([
+        np.asarray(
             [
                 0 == simulate_flooding(seed, p, r, n)[-1]
                 for seed in seeds
@@ -220,20 +254,20 @@ net2p2irs: dict[tuple[int, int], dict[float, NDArray[bool]]] = {
             bool
         )
         for p in ps
-    }
+    ])
     for r, n in nets
 }
 
 # %%
-b: int = len(seeds)
-net2p2grand_mean_v_delta: dict[tuple[int, int], dict[float, tuple[float, float, float]]] = {
-    net: {
-        p: (grand_mean, v, delta)
-        for p, irs in p2irs.items()
-        for grand_mean in [np.mean(irs).item()]
-        for v in [sum((irs - grand_mean) ** 2) / (b - 1)]
-        for delta in [sp.stats.t.ppf((1 + gamma) / 2, df=b - 1) * math.sqrt(v / b)]
-    }
+m: int = len(seeds)
+
+net2p2mean_ci: dict[tuple[int, int], NDArray[np.dtype((float, 3))]] = {
+    net: np.vstack([
+        np.asfarray([w / m, lwr, upp])
+        for irs in p2irs
+        for w in [np.count_nonzero(irs)]
+        for lwr, upp in [ci(m, w)]
+    ])
     for net, p2irs in net2p2irs.items()
 }
 
@@ -247,37 +281,37 @@ _, id2axs = plt.subplot_mosaic(
     subplot_kw={'axisbelow': True},
 )
 
-for a in id2axs.values():
+for ax in id2axs.values():
     for i, net in enumerate(nets):
         (r, n) = net
-        p2grand_mean_v_delta: dict[float, tuple[float, float, float]] = net2p2grand_mean_v_delta[net]
-        ps, grand_means, deltas = zip(*[
-            (p, grand_mean, delta) for p, (grand_mean, _, delta) in p2grand_mean_v_delta.items()
-        ])
-        a.errorbar(
+        p2mean_ci: NDArray[np.dtype((float, 3))] = net2p2mean_ci[net]
+        means: NDArray[float] = p2mean_ci[:, 0]
+        lwrs: NDArray[float] = p2mean_ci[:, 1]
+        upps: NDArray[float] = p2mean_ci[:, 2]
+        ax.errorbar(
             ps,
-            grand_means,
-            deltas,
+            means,
+            np.vstack([means - lwrs, upps - means]),
             fmt='.',
             color=f'C{i}',
-            label=f'$[r = {r}, n = {n} \\pm \\delta]_{{{gamma}}}$',
+            label=f'$[r = {r}, n = {n}]_{{{gamma}}}$',
         )
 
-    a.plot(
+    ax.plot(
         file[:, 0],
         file[:, 1],
         alpha=.5,
         label=f'Theoretical $r = 2, n = 2$',
     )
 
-    a.plot(
+    ax.plot(
         file[:, 0],
         file[:, 2],
         alpha=.5,
         label=f'Theoretical $r = 5, n = 5$',
     )
 
-    a.grid(visible=True, axis='y')
+    ax.grid(visible=True, axis='y')
 
 mark_inset(id2axs['A'], id2axs['B'], 1, 2)
 mark_inset(id2axs['A'], id2axs['C'], 1, 2)
