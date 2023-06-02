@@ -354,6 +354,24 @@ plt.show()
 # \{ r = 2, N = 2 \} \quad \text{vs} \quad \{ r = 5, N = 5 \}
 # $$
 # with fixed $p = \frac 1 2$
+#
+# Finite-horizon simulation.
+#
+# Let
+# $$
+# Y^{(i)} \in [0, N] \qquad i \in [0, r + 1]
+# $$
+# r.v. with unknown distribution be the # of successful nodes at stage $(i)$.
+#
+# To estimate the avg # of successful nodes at stage $(i)$ we estimate $\mu_{Y^{(i)}}$.
+# To estimate $\mu_{Y^{(i)}}$ we generate $Y^{(i)}_1, Y^{(i)}_2, \ldots, Y^{(i)}_m$ independent realizations.
+# We have
+# $$
+# \hat \mu_{Y^{(i)}} = \mathbf E [Y^{(i)}]
+# $$
+#
+# By CLT as $m \to \infty$ we have $\mu_{Y^{(i)}} \sim \mathcal N$.
+# Knowing this, we know how to compute the CI.
 
 # %%
 seeds: NDArray[int] = shop[:5_000]
@@ -365,13 +383,14 @@ net2irs: dict[tuple[int, int], NDArray[...]] = {
 }
 
 # %%
-b: int = len(seeds)
-net2grand_mean_v_delta: dict[tuple[int, int], NDArray[np.dtype((float, 3))]] = {
-    net: np.vstack([grand_mean, v, delta]).T
+m: int = len(seeds)
+
+net2mean_delta: dict[tuple[int, int], NDArray[np.dtype((float, 2))]] = {
+    net: np.vstack([mean, delta]).T
     for net, irs in net2irs.items()
-    for grand_mean in [np.mean(irs, axis=0)]
-    for v in [np.sum((irs - grand_mean) ** 2, axis=0) / (b - 1)]
-    for delta in [sp.stats.t.ppf((1 + gamma) / 2, df=b - 1) * np.sqrt(v / b)]
+    for mean in [np.mean(irs, axis=0)]
+    for vars in [np.var(irs, axis=0)]
+    for delta in [sp.stats.norm.ppf((1 + gamma) / 2) * np.sqrt(vars / m)]
 }
 
 # %%
@@ -379,7 +398,7 @@ f: plt.Figure
 axss: list[list[plt.Axes]]
 f, axss = plt.subplots(
     len(nets),
-    max((len(grand_mean_v_delta) for grand_mean_v_delta in net2grand_mean_v_delta.values())),
+    max((len(mean_delta) for mean_delta in net2mean_delta.values())),
     sharey='row',
     figsize=(12, 5 * 2),
     subplot_kw={
@@ -390,31 +409,31 @@ f, axss = plt.subplots(
 
 for i, net, axs in zip(it.count(), nets, axss):
     (r, n) = net
-    grand_mean_v_delta: NDArray[np.dtype((float, 3))] = net2grand_mean_v_delta[net]
+    mean_delta: NDArray[np.dtype((float, 2))] = net2mean_delta[net]
 
-    for stage, [grand_mean, v, delta], a in zip(it.count(), grand_mean_v_delta, axs):
-        a.axhspan(
-            grand_mean - delta,
-            grand_mean + delta,
+    for stage, [mean, delta], ax in zip(it.count(), mean_delta, axs):
+        ax.axhspan(
+            mean - delta,
+            mean + delta,
             alpha=.5,
             color=f'C{i}',
             label=f'CI {gamma}',
         )
-        a.axhline(
-            grand_mean,
+        ax.axhline(
+            mean,
             color=f'C{i}',
             label=f'$r = {r}, n = {n}$',
         )
 
-        a.grid(visible=True, axis='y')
-        a.set_xlabel(f'#{stage}')
+        ax.grid(visible=True, axis='y')
+        ax.set_xlabel(f'#{stage}')
 
         if stage == 0:
-            a.set_ylabel(r'$\mathbf{E}\left[{\rm successes}\right]$')
+            ax.set_ylabel(r'$\mathbf{E}\left[{\rm successes}\right]$')
 
-for a in it.chain(*axss):
-    if a.get_legend_handles_labels() == ([], []):
-        a.remove()
+for ax in it.chain(*axss):
+    if ax.get_legend_handles_labels() == ([], []):
+        ax.remove()
 
 f.legend(
     it.chain(*[lines for axs in axss for lines, labels in [axs[0].get_legend_handles_labels()]]),
