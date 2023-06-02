@@ -104,7 +104,7 @@ def simulate_flooding(seed: int, p: float, r: int, n: int) -> NDArray[int]:
     return np.fromiter(it.accumulate(network, next_stage, initial=1), int)
 
 
-shop: NDArray[int] = np.fromiter(mit.sieve(500_000), int)[1:]
+shop: NDArray[int] = np.fromiter(mit.sieve(10_000_000), int)[1:]
 
 # %%
 doctest.testmod()
