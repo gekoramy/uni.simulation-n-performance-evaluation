@@ -401,7 +401,7 @@ f, axss = plt.subplots(
     len(nets),
     max((len(mean_delta) for mean_delta in net2mean_delta.values())),
     sharey='row',
-    figsize=(12, 5 * 2),
+    figsize=(12, 5 * len(nets)),
     subplot_kw={
         'xticks': [],
         'axisbelow': True,
