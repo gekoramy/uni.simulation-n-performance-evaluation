@@ -20,6 +20,7 @@ from matplotlib_inline.backend_inline import set_matplotlib_formats
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 from numpy.typing import NDArray
 
+import functools as fn
 import doctest
 import numpy as np
 import more_itertools as mit
@@ -458,15 +459,31 @@ plt.show()
 
 # %% [markdown]
 # ## Post-stratification
-# Let $Y$ be the number of successful nodes at stage 1.
+# Let $Y^{(1)}$ be the number of successful nodes at stage 1.
 # We have:
 # $$
-# Y \sim {\rm Bin}(n = N, p = p)
+# Y^{(1)} \sim {\rm Bin}(n = N, p = 1 - p)
 # $$
 #
 # Knowing this, we can estimate the probability of failing to reach $D$ by applying post-stratification technique
 # $$
-# \mathbf E \big[ X \big] = \sum_y \mathbf E \big[ X\ |\ Y = y \big] \cdot \mathbf P \big\{ Y = y \big\}
+# \mathbf E \big[ X \big] = \sum_y \mathbf E \big[ X\ |\ Y^{(1)} = y \big] \cdot \mathbf P \big\{ Y^{(1)} = y \big\}
+# $$
+#
+# To compute the CI we apply the independent replications technique:
+# $$
+# \underbrace{Y_1\, \cdots\, Y_m}_{B_1}\,
+# \underbrace{Y_{m + 1}\, \cdots\, Y_{2m}}_{B_2}\,
+# \cdots\,
+# \underbrace{Y_{(b - 1) m + 1}\, \cdots\, Y_{b m}}_{B_b}
+# $$
+# $$
+# \hat V_B = \frac 1 {b - 1} \sum_i^b (Z_i - \overline Z_b)^2
+# \qquad
+# \overline Z_b = \frac 1 b \sum_i^b Z_i
+# $$
+# $$
+# \left[ \overline Z_b \pm t_{b - 1, \frac {1 + \gamma} 2} \sqrt{\frac {\hat V} b} \right]_\gamma
 # $$
 #
 # Comparing
@@ -476,36 +493,158 @@ plt.show()
 # with fixed $p = \frac 1 2$
 
 # %%
-seeds: NDArray[int] = shop[:5_000]
+b: int = 50
+s: int = 200
+seedss: NDArray[int] = np.reshape(shop[:b * s], (b, s))
+
 
 # %%
-net2irs: dict[tuple[int, int], NDArray[...]] = {
-    (r, n): np.asarray(
-        [
-            (sim[1], 0 == sim[-1])
-            for seed in seeds
-            for sim in [simulate_flooding(seed, p, r, n)]
-        ]
-    )
+def occurrences(acc: NDArray[np.dtype((int, 2))], iv: tuple[int, bool]) -> NDArray[np.dtype((int, 2))]:
+    i, v = iv
+    acc[i][int(v)] += 1
+    return acc
+
+
+net2irss: dict[tuple[int, int], NDArray[np.dtype((int, 2))]] = {
+    (r, n): np.asarray([
+        fn.reduce(
+            occurrences,
+            (
+                (sim[1], 0 == sim[-1])
+                for seed in seeds
+                for sim in [simulate_flooding(seed, p, r, n)]
+            ),
+            np.zeros((n + 1, 2), int)
+        )
+        for seeds in seedss
+    ], int)
     for r, n in nets
 }
 
 # %% [markdown]
 # $$
-# \begin{bmatrix} A & B \\ C & D \end{bmatrix}
+# \begin{bmatrix}
+# \mathbf E \left[ X | Y^{(1)}=0 \right] &
+# \mathbf E \left[ X | Y^{(1)}=1 \right] &
+# \mathbf E \left[ X | Y^{(1)}=2 \right] &
+# \cdots
+# \\
+# \mathbf E \left[ X | Y^{(1)}=0 \right] &
+# \mathbf E \left[ X | Y^{(1)}=1 \right] &
+# \mathbf E \left[ X | Y^{(1)}=2 \right] &
+# \cdots
+# \\
+# \cdots
+# \end{bmatrix}
 # \times
-# \begin{bmatrix} x & y \end{bmatrix}
+# \begin{bmatrix}
+# \mathbf P(Y^{(1)}=0) \\
+# \mathbf P(Y^{(1)}=1) \\
+# \mathbf P(Y^{(1)}=2) \\
+# \vdots
+# \end{bmatrix}
 # =
-# \begin{bmatrix} (x) A + (y) B \\ (x) C + (y) D \end{bmatrix}
+# \begin{bmatrix}
+# \sum_y \mathbf E \big[ X\ |\ Y^{(1)} = y \big] \cdot \mathbf P \big\{ Y^{(1)} = y \big\} = \mathbf E \big[ X \big]\\
+# \sum_y \mathbf E \big[ X\ |\ Y^{(1)} = y \big] \cdot \mathbf P \big\{ Y^{(1)} = y \big\} = \mathbf E \big[ X \big]\\
+# \cdots
+# \end{bmatrix}
 # $$
 
 # %%
-b: int = len(seeds)
-# TODO
-# net2grand_mean_v_delta: dict[tuple[int, int], NDArray[np.dtype((float, 3))]] = {
-#     net: np.vstack([grand_mean, v, delta]).T
-#     for net, irs in net2irs.items()
-#     for grand_mean in [ [ val * sp.stats.binom.pmf(k=y, n=n, p=p) for y, val in irs] ]
-#     for v in [np.sum((irs - grand_mean) ** 2, axis=0) / (b - 1)]
-#     for delta in [sp.stats.t.ppf((1 + gamma) / 2, df=b - 1) * np.sqrt(v / b)]
-# }
+net2grand_mean_ci: dict[tuple[int, int], NDArray[float]] = {
+    (r, n): (
+        grand_mean,
+        sp.stats.t.interval(
+            confidence=gamma,
+            df=b - 1,
+            loc=grand_mean,
+            scale=np.sqrt(var / b)
+        )
+    )
+    for (r, n), irs in net2irss.items()
+    for muss in [irs[:, :, 1] / (irs[:, :, 0] + irs[:, :, 1])]
+    for mus in [np.matmul(muss, sp.stats.binom.pmf(k=np.arange(0, n + 1), n=n, p=1 - p))]
+    for grand_mean in [np.mean(mus).item()]
+    for var in [np.var(mus, ddof=1).item()]
+}
+
+net2mean_ci: dict[tuple[int, int], tuple[float, tuple[float, float]]] = {
+    net: (
+        w / m,
+        ci(m, w)
+    )
+    for net, irs in net2irss.items()
+    for w in [np.sum(irs[:, :, 1])]
+    for m in [seedss.size]
+}
+
+# %%
+comparing: dict[str, dict[tuple[int, int], tuple[float, tuple[float, float]]]] = {
+    r'$\sum_y \ \mathbf{E} [ X\ |\ Y^{(1)} = y ] \cdot \mathbf{P} \{ Y^{(1)} = y \}$': net2grand_mean_ci,
+    r'$\mathbf{E} [ X ]$': net2mean_ci,
+}
+
+axss: NDArray[np.dtype((plt.Axes, 2))]
+f, axss = plt.subplots(
+    len(nets), len(comparing),
+    sharey='row',
+    figsize=(12, 5),
+    subplot_kw={
+        'xticks': [],
+        'axisbelow': True,
+    },
+    height_ratios=[
+        max([
+            upp - lwr
+            for n2m in comparing.values()
+            for _, (lwr, upp) in [n2m[net]]
+        ])
+        for net in nets
+    ]
+)
+
+for axs, (name, n2m) in zip(axss.T, comparing.items()):
+
+    axs[0].set_title(name)
+
+    for i, net, ax in zip(it.count(), nets, axs):
+        mean, (lwr, upp) = n2m[net]
+        (r, n) = net
+        ax.axhspan(
+            lwr,
+            upp,
+            alpha=.5,
+            color=f'C{i}',
+            label=f'CI {gamma}',
+        )
+        ax.axhline(
+            mean,
+            color=f'C{i}',
+            label=f'$r = {r}, n = {n}$'
+        )
+
+for ax in axss[:-1].flatten():
+    ax.spines.bottom.set_visible(False)
+
+for ax in axss[1:].flatten():
+    ax.spines.top.set_visible(False)
+
+for ax in axss[:, 0].flatten():
+    ax.set_ylabel(r'$\mathbf{P}\{{\rm lost}\}$')
+
+f.subplots_adjust(hspace=.1)
+f.legend(
+    it.chain(*[lines for ax in axss[:, 0] for lines, labels in [ax.get_legend_handles_labels()]]),
+    it.chain(*[labels for ax in axss[:, 0] for lines, labels in [ax.get_legend_handles_labels()]]),
+)
+f.suptitle(f'${seeds[0]} \\ldots {seeds[-1]} \\vdash p = {p}$ // ' + '${}$ samples'.format(
+    r' \times '.join(map(str, seedss.shape))))
+f.subplots_adjust(wspace=0)
+plt.show()
+
+# %% [markdown]
+# We compare the post-stratification estimator with the first estimator used in this report.
+# Given the same realizations, the post-stratification estimator returns smaller CIs, thus more precise estimations.
+# Moreover, the post-stratification CIs are completely contained in the first estimator CIs.
+# This suggests that the accuracy of both estimators are comparable.
