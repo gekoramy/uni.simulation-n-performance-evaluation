@@ -470,22 +470,6 @@ plt.show()
 # \mathbf E \big[ X \big] = \sum_y \mathbf E \big[ X\ |\ Y^{(1)} = y \big] \cdot \mathbf P \big\{ Y^{(1)} = y \big\}
 # $$
 #
-# To compute the CI we apply the independent replications technique:
-# $$
-# \underbrace{Y_1\, \cdots\, Y_m}_{B_1}\,
-# \underbrace{Y_{m + 1}\, \cdots\, Y_{2m}}_{B_2}\,
-# \cdots\,
-# \underbrace{Y_{(b - 1) m + 1}\, \cdots\, Y_{b m}}_{B_b}
-# $$
-# $$
-# \hat V_B = \frac 1 {b - 1} \sum_i^b (Z_i - \overline Z_b)^2
-# \qquad
-# \overline Z_b = \frac 1 b \sum_i^b Z_i
-# $$
-# $$
-# \left[ \overline Z_b \pm t_{b - 1, \frac {1 + \gamma} 2} \sqrt{\frac {\hat V} b} \right]_\gamma
-# $$
-#
 # Comparing
 # $$
 # \{ r = 2, N = 2 \} \quad \text{vs} \quad \{ r = 5, N = 5 \}
@@ -493,9 +477,8 @@ plt.show()
 # with fixed $p = \frac 1 2$
 
 # %%
-b: int = 50
-s: int = 200
-seedss: NDArray[int] = np.reshape(shop[:b * s], (b, s))
+m: int = 5_000
+seeds: NDArray[int] = shop[:m]
 
 
 # %%
@@ -505,68 +488,106 @@ def occurrences(acc: NDArray[np.dtype((int, 2))], iv: tuple[int, bool]) -> NDArr
     return acc
 
 
-net2irss: dict[tuple[int, int], NDArray[np.dtype((int, 2))]] = {
-    (r, n): np.asarray([
-        fn.reduce(
-            occurrences,
-            (
-                (sim[1], 0 == sim[-1])
-                for seed in seeds
-                for sim in [simulate_flooding(seed, p, r, n)]
-            ),
-            np.zeros((n + 1, 2), int)
-        )
-        for seeds in seedss
-    ], int)
+net2s2tot: dict[tuple[int, int], NDArray[np.dtype((int, 2))]] = {
+    (r, n): fn.reduce(
+        occurrences,
+        (
+            (sim[1], 0 == sim[-1])
+            for seed in seeds
+            for sim in [simulate_flooding(seed, p, r, n)]
+        ),
+        np.zeros((n + 1, 2), int)
+    )
     for r, n in nets
 }
 
 # %% [markdown]
 # $$
 # \begin{bmatrix}
-# \mathbf E \left[ X | Y^{(1)}=0 \right] &
-# \mathbf E \left[ X | Y^{(1)}=1 \right] &
-# \mathbf E \left[ X | Y^{(1)}=2 \right] &
-# \cdots
-# \\
-# \mathbf E \left[ X | Y^{(1)}=0 \right] &
-# \mathbf E \left[ X | Y^{(1)}=1 \right] &
-# \mathbf E \left[ X | Y^{(1)}=2 \right] &
-# \cdots
-# \\
-# \cdots
-# \end{bmatrix}
-# \times
-# \begin{bmatrix}
-# \mathbf P(Y^{(1)}=0) \\
-# \mathbf P(Y^{(1)}=1) \\
-# \mathbf P(Y^{(1)}=2) \\
+# \mathbf E \left[ X | Y^{(1)}=0 \right] \\
+# \mathbf E \left[ X | Y^{(1)}=1 \right] \\
+# \mathbf E \left[ X | Y^{(1)}=2 \right] \\
 # \vdots
 # \end{bmatrix}
-# =
+# \cdot
 # \begin{bmatrix}
-# \sum_y \mathbf E \big[ X\ |\ Y^{(1)} = y \big] \cdot \mathbf P \big\{ Y^{(1)} = y \big\} = \mathbf E \big[ X \big]\\
-# \sum_y \mathbf E \big[ X\ |\ Y^{(1)} = y \big] \cdot \mathbf P \big\{ Y^{(1)} = y \big\} = \mathbf E \big[ X \big]\\
-# \cdots
+# \mathbf P\big\{Y^{(1)}=0\big\} \\
+# \mathbf P\big\{Y^{(1)}=1\big\} \\
+# \mathbf P\big\{Y^{(1)}=2\big\} \\
+# \vdots
+# \end{bmatrix}^\top
+# =
+# \sum_y \mathbf E \big[ X\ |\ Y^{(1)} = y \big] \cdot \mathbf P \big\{ Y^{(1)} = y \big\}
+# $$
+# $$
+# \begin{bmatrix}
+# \begin{bmatrix}
+# \# \left[X_0 | Y^{(1)}=0\right] \\
+# \# \left[X_1 | Y^{(1)}=0\right]
 # \end{bmatrix}
+# \cdot
+# \begin{bmatrix}
+# (0 - \mathbf E \left[ X | Y^{(1)}=0 \right])^2 \\
+# (1 - \mathbf E \left[ X | Y^{(1)}=0 \right])^2
+# \end{bmatrix}^\top
+# \\
+# \begin{bmatrix}
+# \# \left[X_0 | Y^{(1)}=1\right] \\
+# \# \left[X_1 | Y^{(1)}=1\right]
+# \end{bmatrix}
+# \cdot
+# \begin{bmatrix}
+# (0 - \mathbf E \left[ X | Y^{(1)}=1 \right])^2 \\
+# (1 - \mathbf E \left[ X | Y^{(1)}=1 \right])^2
+# \end{bmatrix}^\top
+# \\
+# \begin{bmatrix}
+# \# \left[X_0 | Y^{(1)}=2\right] \\
+# \# \left[X_1 | Y^{(1)}=2\right]
+# \end{bmatrix}
+# \cdot
+# \begin{bmatrix}
+# (0 - \mathbf E \left[ X | Y^{(1)}=2 \right])^2 \\
+# (1 - \mathbf E \left[ X | Y^{(1)}=2 \right])^2
+# \end{bmatrix}^\top
+# \\
+# \vdots
+# \end{bmatrix}
+# \circ
+# \begin{bmatrix}
+# \frac 1 {\# \left[X | Y^{(1)}=0\right]} \\
+# \frac 1 {\# \left[X | Y^{(1)}=1\right]} \\
+# \frac 1 {\# \left[X | Y^{(1)}=2\right]} \\
+# \vdots
+# \end{bmatrix}
+# \cdot
+# \begin{bmatrix}
+# \mathbf P\big\{Y^{(1)}=0\big\} \\
+# \mathbf P\big\{Y^{(1)}=1\big\} \\
+# \mathbf P\big\{Y^{(1)}=2\big\} \\
+# \vdots
+# \end{bmatrix}^\top
+# =
+# \sum_y \text{var} \big( X\ \big|\ Y^{(1)} = y \big) \cdot \mathbf P \big\{ Y^{(1)} = y \big\}
 # $$
 
 # %%
-net2grand_mean_ci: dict[tuple[int, int], NDArray[float]] = {
+net2grand_mean_ci: dict[tuple[int, int], tuple[float, tuple[float, float]]] = {
     (r, n): (
-        grand_mean,
-        sp.stats.t.interval(
+        mu,
+        sp.stats.norm.interval(
             confidence=gamma,
-            df=b - 1,
-            loc=grand_mean,
-            scale=np.sqrt(var / b)
+            loc=mu,
+            scale=np.sqrt(var / m)
         )
     )
-    for (r, n), irs in net2irss.items()
-    for muss in [irs[:, :, 1] / (irs[:, :, 0] + irs[:, :, 1])]
-    for mus in [np.matmul(muss, sp.stats.binom.pmf(k=np.arange(0, n + 1), n=n, p=1 - p))]
-    for grand_mean in [np.mean(mus).item()]
-    for var in [np.var(mus, ddof=1).item()]
+    for (r, n), s2tot in net2s2tot.items()
+    for ps in [sp.stats.binom.pmf(k=np.arange(0, n + 1), n=n, p=1 - p)]
+    for s2mu in [s2tot[:, 1] / (s2tot[:, 0] + s2tot[:, 1])]
+    for mu in [np.matmul(s2mu, ps).item()]
+    for x2val in [(np.asarray([0, 1]) - np.expand_dims(s2mu, axis=1)) ** 2]
+    for s2var in [np.einsum('ij, ij -> i', s2tot, x2val) / np.sum(s2tot, axis=1)]
+    for var in [np.matmul(s2var, ps).item()]
 }
 
 net2mean_ci: dict[tuple[int, int], tuple[float, tuple[float, float]]] = {
@@ -574,9 +595,8 @@ net2mean_ci: dict[tuple[int, int], tuple[float, tuple[float, float]]] = {
         w / m,
         ci(m, w)
     )
-    for net, irs in net2irss.items()
-    for w in [np.sum(irs[:, :, 1])]
-    for m in [seedss.size]
+    for net, s2tot in net2s2tot.items()
+    for w in [np.sum(s2tot[:, 1])]
 }
 
 # %%
@@ -638,8 +658,7 @@ f.legend(
     it.chain(*[lines for ax in axss[:, 0] for lines, labels in [ax.get_legend_handles_labels()]]),
     it.chain(*[labels for ax in axss[:, 0] for lines, labels in [ax.get_legend_handles_labels()]]),
 )
-f.suptitle(f'${seeds[0]} \\ldots {seeds[-1]} \\vdash p = {p}$ // ' + '${}$ samples'.format(
-    r' \times '.join(map(str, seedss.shape))))
+f.suptitle(f'${seeds[0]} \\ldots {seeds[-1]} \\vdash p = {p}$ // {m} samples')
 f.subplots_adjust(wspace=0)
 plt.show()
 
