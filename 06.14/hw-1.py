@@ -572,7 +572,7 @@ net2s2tot: dict[tuple[int, int], NDArray[np.dtype((int, 2))]] = {
 # $$
 
 # %%
-net2grand_mean_ci: dict[tuple[int, int], tuple[float, tuple[float, float]]] = {
+net2strat_mean_ci: dict[tuple[int, int], tuple[float, tuple[float, float]]] = {
     (r, n): (
         mu,
         sp.stats.norm.interval(
@@ -601,7 +601,7 @@ net2mean_ci: dict[tuple[int, int], tuple[float, tuple[float, float]]] = {
 
 # %%
 comparing: dict[str, dict[tuple[int, int], tuple[float, tuple[float, float]]]] = {
-    r'$\sum_y \ \mathbf{E} [ X\ |\ Y^{(1)} = y ] \cdot \mathbf{P} \{ Y^{(1)} = y \}$': net2grand_mean_ci,
+    r'$\sum_y \ \mathbf{E} [ X\ |\ Y^{(1)} = y ] \cdot \mathbf{P} \{ Y^{(1)} = y \}$': net2strat_mean_ci,
     r'$\mathbf{E} [ X ]$': net2mean_ci,
 }
 
