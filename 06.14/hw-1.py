@@ -375,86 +375,121 @@ plt.show()
 # Knowing this, we know how to compute the CI.
 
 # %%
-seeds: NDArray[int] = shop[:5_000]
+def metric(p: float) -> None:
 
-# %%
-net2irs: dict[tuple[int, int], NDArray[...]] = {
-    (r, n): np.vstack([simulate_flooding(seed, p, r, n) for seed in seeds])
-    for r, n in nets
-}
+    seeds: NDArray[int] = shop[:5_000]
 
-# %%
-m: int = len(seeds)
-
-net2mean_delta: dict[tuple[int, int], NDArray[np.dtype((float, 2))]] = {
-    net: np.vstack([mean, delta]).T
-    for net, irs in net2irs.items()
-    for mean in [np.mean(irs, axis=0)]
-    for vars in [np.var(irs, axis=0)]
-    for delta in [sp.stats.norm.ppf((1 + gamma) / 2) * np.sqrt(vars / m)]
-}
-
-# %%
-f: plt.Figure
-axss: list[list[plt.Axes]]
-f, axss = plt.subplots(
-    len(nets),
-    max((len(mean_delta) for mean_delta in net2mean_delta.values())),
-    sharey='row',
-    figsize=(12, 5 * len(nets)),
-    subplot_kw={
-        'xticks': [],
-        'axisbelow': True,
+    net2irs: dict[tuple[int, int], NDArray[...]] = {
+        (r, n): np.vstack([simulate_flooding(seed, p, r, n) for seed in seeds])
+        for r, n in nets
     }
-)
 
-for i, net, axs in zip(it.count(), nets, axss):
-    (r, n) = net
-    mean_delta: NDArray[np.dtype((float, 2))] = net2mean_delta[net]
+    m: int = len(seeds)
 
-    for stage, [mean, delta], ax in zip(it.count(), mean_delta, axs):
-        ax.axhspan(
-            mean - delta,
-            mean + delta,
-            alpha=.5,
-            color=f'C{i}',
-            label=f'CI {gamma}',
-        )
-        ax.axhline(
-            mean,
-            color=f'C{i}',
-            label=f'$r = {r}, n = {n}$',
-        )
+    net2mean_delta: dict[tuple[int, int], NDArray[np.dtype((float, 2))]] = {
+        net: np.vstack([mean, delta]).T
+        for net, irs in net2irs.items()
+        for mean in [np.mean(irs, axis=0)]
+        for vars in [np.var(irs, axis=0)]
+        for delta in [sp.stats.norm.ppf((1 + gamma) / 2) * np.sqrt(vars / m)]
+    }
 
-        ax.grid(visible=True, axis='y')
-        ax.set_xlabel(f'#{stage}')
+    f: plt.Figure
+    axss: list[list[plt.Axes]]
+    f, axss = plt.subplots(
+        len(nets),
+        max((len(mean_delta) for mean_delta in net2mean_delta.values())),
+        sharey='row',
+        figsize=(12, 5 * len(nets)),
+        subplot_kw={
+            'xticks': [],
+            'axisbelow': True,
+        }
+    )
 
-        if stage == 0:
-            ax.set_ylabel(r'$\mathbf{E}\left[{\rm successes}\right]$')
+    for i, net, axs in zip(it.count(), nets, axss):
+        (r, n) = net
+        mean_delta: NDArray[np.dtype((float, 2))] = net2mean_delta[net]
 
-for ax in it.chain(*axss):
-    if ax.get_legend_handles_labels() == ([], []):
-        ax.remove()
+        for stage, [mean, delta], ax in zip(it.count(), mean_delta, axs):
+            ax.axhspan(
+                mean - delta,
+                mean + delta,
+                alpha=.5,
+                color=f'C{i}',
+                label=f'CI {gamma}',
+            )
+            ax.axhline(
+                mean,
+                color=f'C{i}',
+                label=f'$r = {r}, n = {n}$',
+            )
 
-f.legend(
-    it.chain(*[lines for axs in axss for lines, labels in [axs[0].get_legend_handles_labels()]]),
-    it.chain(*[labels for axs in axss for lines, labels in [axs[0].get_legend_handles_labels()]]),
-)
-f.suptitle(f'${seeds[0]} \\ldots {seeds[-1]} \\vdash p = {p}$ // {len(seeds)} samples')
-f.subplots_adjust(wspace=0)
-plt.show()
+            ax.grid(visible=True, axis='y')
+            ax.set_xlabel(f'#{stage}')
+
+            if stage == 0:
+                ax.set_ylabel(r'$\mathbf{E}\left[{\rm successes}\right]$')
+
+    for ax in it.chain(*axss):
+        if ax.get_legend_handles_labels() == ([], []):
+            ax.remove()
+
+    f.legend(
+        it.chain(*[lines for axs in axss for lines, labels in [axs[0].get_legend_handles_labels()]]),
+        it.chain(*[labels for axs in axss for lines, labels in [axs[0].get_legend_handles_labels()]]),
+    )
+    f.suptitle(f'${seeds[0]} \\ldots {seeds[-1]} \\vdash p = {p}$ // {len(seeds)} samples')
+    f.subplots_adjust(wspace=0)
+    plt.show()
+
+
+# %%
+metric(0)
+
+# %%
+metric(.1)
+
+# %%
+metric(.2)
+
+# %%
+metric(.3)
+
+# %%
+metric(.4)
+
+# %%
+metric(.5)
+
+# %%
+metric(.6)
+
+# %%
+metric(.75)
+
+# %%
+metric(.7)
+
+# %%
+metric(.8)
+
+# %%
+metric(.9)
+
+# %%
+metric(1)
 
 # %% [markdown]
-# From the above plots, we can infer that the average number of successful nodes varies monotonically stage after stage.
+# From the above plots, we can infer that the average number of successful nodes varies monotonically stage after stage, eventually reaching a plateau.
 # This makes sense because the probability of a successful node strictly depends on the number of relays.
-# The higher [lower] the number of relays at stage $i$, the higher [lower] the number of successful nodes at stage $i + 1$.
+# If the number of relays at stage $i$ increases [decreases], the number of succesful nodes at stage $i + 1$ increases [decreases].
 #
-# Fixed $p = \frac 1 2$, we have:
-# $$
-# \mathbf P \Big\{ {\rm lost} \ \Big|\ \{r = 5, N = 5\}\Big\} < \mathbf P \Big\{ {\rm lost}\ \Big|\ \{r = 2, N = 2\} \Big\}
-# $$
+# Since as $p$ increases:
+# - the probability of failing to reach $D$ increases
+# - the slope of the curve describing the average number of successful nodes at each stage decreases until it becomes negative
 #
-# From the above comparison, we can infer that the probability of failing to reach $D$ is inversely proportional to the average number of successful nodes at each stage.
+# We can deduce that the probability of failing to reach $D$ is inversely proportional to the average number of successful nodes in each stage.
 # The higher the number of relays, the higher the probability of reaching $D$.
 
 # %% [markdown]
