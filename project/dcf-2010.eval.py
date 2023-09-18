@@ -41,17 +41,35 @@ def tau_p(n: int, W: int, R: int) -> tuple[float, float]:
 
     return fsolve(system, x0=np.full(2, .5))
 
+def tau_p_revised(n: int, W: int, m: int, R: int) -> tuple[float, float]:
+
+    if R <= m:
+        def system(x: tuple[float, float]) -> tuple[float, float]:
+            tau, p = x
+            return (
+                - p + 1 - (1 - tau) ** (n - 1),
+                - tau + 1 / (1 + (1 - p) / (2 * (1 - p ** (R + 1))) * sum([p ** j * (W * 2 ** j - 1) - (1 - p ** (R + 1)) for j in range(R + 1)]))
+            )
+    else:
+        def system(x: tuple[float, float]) -> tuple[float, float]:
+            tau, p = x
+            return (
+                - p + 1 - (1 - tau) ** (n - 1),
+                - tau + 1 / (1 + (1 - p) / (2 * (1 - p ** (R + 1))) * sum([p ** j * (W * 2 ** min(m, j) - 1) - (1 - p ** (R + 1)) for j in range(R + 1)]))
+            )
+
+    return fsolve(system, x0=np.full(2, .5))
+
 
 def S(
         n: int,
         W: int,
-        R: int,
         payload: int,
         slot_time: int,
+        tau: float,
         Ts: float,
         Tc: float,
 ) -> float:
-    tau, p = tau_p(n, W, R)
     Pb: float = 1 - (1 - tau) ** n
     Ps: float = n * tau * (1 - tau) ** (n - 1)
     sEP: float = payload * W / (W - 1)
@@ -186,13 +204,26 @@ for ax in [ax1, ax2]:
     )
     ax.axhline(
         S(
-            n=n, W=W, R=R, payload=payload, slot_time=slot_time,
+            n=n, W=W, payload=payload, slot_time=slot_time,
+            tau=tau_p(n, W, R)[0],
             Ts=BAS_time_success(mpdu, sifs, difs, ack, channel_bit_rate),
             Tc=BAS_time_collision(mpdu, sifs, difs, ack, channel_bit_rate)
         ),
         alpha=.5,
         label=r'$S$',
         color='red',
+        linestyle='--',
+    )
+    ax.axhline(
+        S(
+            n=n, W=W, payload=payload, slot_time=slot_time,
+            tau=tau_p_revised(n, W, m, R)[0],
+            Ts=BAS_time_success(mpdu, sifs, difs, ack, channel_bit_rate),
+            Tc=BAS_time_collision(mpdu, sifs, difs, ack, channel_bit_rate)
+        ),
+        alpha=.5,
+        label=r'$S\'$',
+        color='purple',
         linestyle='--',
     )
 
@@ -216,14 +247,32 @@ for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 
         ns,
         [
             S(
-                n=n, W=W, R=R, payload=payload, slot_time=slot_time,
+                n=n, W=W, payload=payload, slot_time=slot_time,
+                tau=tau_p(n, W, R)[0],
                 Ts=BAS_time_success(mpdu, sifs, difs, ack, channel_bit_rate),
-                Tc=BAS_time_collision(mpdu, sifs, difs, ack, channel_bit_rate),
+                Tc=BAS_time_collision(mpdu, sifs, difs, ack, channel_bit_rate)
             )
             for n
             in ns
         ],
         color=cmap(i),
+        alpha=.5,
+    )
+
+    ax.plot(
+        ns,
+        [
+            S(
+                n=n, W=W, payload=payload, slot_time=slot_time,
+                tau=tau_p_revised(n, W, m, R)[0],
+                Ts=BAS_time_success(mpdu, sifs, difs, ack, channel_bit_rate),
+                Tc=BAS_time_collision(mpdu, sifs, difs, ack, channel_bit_rate)
+            )
+            for n
+            in ns
+        ],
+        color=cmap(i),
+        linestyle='--',
         alpha=.5,
     )
 
@@ -286,7 +335,8 @@ for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 
         ns,
         [
             S(
-                n=n, W=W, R=R, payload=payload, slot_time=slot_time,
+                n=n, W=W, payload=payload, slot_time=slot_time,
+                tau=tau_p(n, W, R)[0],
                 Ts=RTSCTS_time_success(mpdu, sifs, difs, ack, channel_bit_rate, rts, cts),
                 Tc=RTSCTS_time_collision(mpdu, difs, ack, channel_bit_rate, rts),
             )
@@ -294,6 +344,23 @@ for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 
             in ns
         ],
         color=cmap(i),
+        alpha=.5,
+    )
+
+    ax.plot(
+        ns,
+        [
+            S(
+                n=n, W=W, payload=payload, slot_time=slot_time,
+                tau=tau_p_revised(n, W, m, R)[0],
+                Ts=RTSCTS_time_success(mpdu, sifs, difs, ack, channel_bit_rate, rts, cts),
+                Tc=RTSCTS_time_collision(mpdu, difs, ack, channel_bit_rate, rts),
+            )
+            for n
+            in ns
+        ],
+        color=cmap(i),
+        linestyle='--',
         alpha=.5,
     )
 
@@ -381,6 +448,7 @@ ax1.hlines(
 )
 
 _, p = tau_p(n, W, R)
+_, p_revised = tau_p_revised(n, W, m, R)
 
 for ax in [ax1, ax2]:
     ax.axhspan(
@@ -403,6 +471,13 @@ for ax in [ax1, ax2]:
         alpha=.5,
         label=r'$p$',
         color='red',
+        linestyle='--',
+    )
+    ax.axhline(
+        p_revised,
+        alpha=.5,
+        label=r'$p\'$',
+        color='purple',
         linestyle='--',
     )
 
@@ -430,6 +505,18 @@ for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 
             for _, p in [tau_p(n, W, R)]
         ],
         color=cmap(i),
+        alpha=.5,
+    )
+
+    plt.plot(
+        ns,
+        [
+            p
+            for n in ns
+            for _, p in [tau_p_revised(n, W, m, R)]
+        ],
+        color=cmap(i),
+        linestyle='--',
         alpha=.5,
     )
 
