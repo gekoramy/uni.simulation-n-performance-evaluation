@@ -93,3 +93,21 @@ for n, W, m, R in tqdm([(n, W, m, R) for n in [5, 10, 15, 20, 30, 50] for W in [
         ]
         , axis=1
     ).to_csv(out / f'2010.n={n} W={W} m={m} R={R}.csv', index=False)
+
+# %%
+for n, W, m, R in tqdm([(n, W, m, R) for n in [5, 10, 15, 20, 30, 50] for W in [32] for m in [3, 5, 7, 9] for R in [9]]):
+    ls: list[Log] = mit.take(
+        100 * 5_000,
+        simulation(shop, n=n, W=W, m=m, R=R)
+    )
+
+    pd.concat(
+        [
+            pd.DataFrame([x.span for x in ls], columns=['span']),
+            pd.concat([
+                pd.DataFrame([x.contenders for x in ls]),
+                pd.DataFrame([x.attempt for x in ls]),
+            ], axis=1, keys=['contenders', 'attempt'])
+        ]
+        , axis=1
+    ).to_csv(out / f'2010.n={n} W={W} m={m} R={R}.csv', index=False)
