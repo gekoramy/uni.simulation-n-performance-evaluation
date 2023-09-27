@@ -41,8 +41,8 @@ def tau_p(n: int, W: int, R: int) -> tuple[float, float]:
 
     return fsolve(system, x0=np.full(2, .5))
 
-def tau_p_revised(n: int, W: int, m: int, R: int) -> tuple[float, float]:
 
+def tau_p_revised(n: int, W: int, m: int, R: int) -> tuple[float, float]:
     if R <= m:
         def system(x: tuple[float, float]) -> tuple[float, float]:
             tau, p = x
@@ -627,7 +627,6 @@ ax.plot(
 )
 
 for i, m in enumerate([3, 5, 7, 9]):
-
     ax.plot(
         ns,
         [
@@ -683,17 +682,17 @@ ax.set_ylabel('saturation throughput [Mbit/s]')
 ax.set_xlabel('STAs')
 ax.legend(
     handles=[
-        matplotlib.patches.Patch(
-            color='black',
-            label=f'$S$'
-        )
-    ] + [
-        matplotlib.patches.Patch(
-            color=cmap(i),
-            label=f'$m = {m}$'
-        )
-        for i, m in enumerate([3, 5, 7, 9])
-    ]
+                matplotlib.patches.Patch(
+                    color='black',
+                    label='Official',
+                )
+            ] + [
+                matplotlib.patches.Patch(
+                    color=cmap(i),
+                    label=f'$m = {m}$'
+                )
+                for i, m in enumerate([3, 5, 7, 9])
+            ]
 )
 f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
 f.savefig(out / f'2010.BAS.focus-throughput.W = {W}, R = {R}.pgf')
@@ -721,7 +720,6 @@ ax.plot(
 )
 
 for i, m in enumerate([3, 5, 7, 9]):
-
     ax.plot(
         ns,
         [
@@ -777,17 +775,17 @@ ax.set_ylabel('saturation throughput [Mbit/s]')
 ax.set_xlabel('STAs')
 ax.legend(
     handles=[
-        matplotlib.patches.Patch(
-            color='black',
-            label=f'$S$'
-        )
-    ] + [
-        matplotlib.patches.Patch(
-            color=cmap(i),
-            label=f'$m = {m}$'
-        )
-        for i, m in enumerate([3, 5, 7, 9])
-    ]
+                matplotlib.patches.Patch(
+                    color='black',
+                    label='Official',
+                )
+            ] + [
+                matplotlib.patches.Patch(
+                    color=cmap(i),
+                    label=f'$m = {m}$'
+                )
+                for i, m in enumerate([3, 5, 7, 9])
+            ]
 )
 f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
 f.savefig(out / f'2010.RTSCTS.focus-throughput.W = {W}, R = {R}.pgf')
