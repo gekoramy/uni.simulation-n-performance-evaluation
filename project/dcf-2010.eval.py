@@ -600,7 +600,7 @@ f.savefig(out / f'2010.p-init-bias.W = {W}, m = {m}, R = {R}.pgf')
 
 # %%
 b: int = 500
-batch_size: int = 1_000
+batch_size: int = 10_000
 R: int = 9
 W: int = 2 ** 5
 
@@ -789,3 +789,85 @@ ax.legend(
 )
 f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
 f.savefig(out / f'2010.RTSCTS.focus-throughput.W = {W}, R = {R}.pgf')
+
+# %%
+b: int = 500
+batch_size: int = 10_000
+
+# %%
+ax: plt.Axes
+f, ax = plt.subplots(1, 1)
+
+ns: NDArray[float] = np.linspace(5, 50, 1_000)
+
+plt.plot(
+    ns,
+    [
+        p
+        for n in ns
+        for _, p in [tau_p(n, W, R)]
+    ],
+    color='black',
+    alpha=.5,
+)
+
+for i, m in enumerate([3, 5, 7, 9]):
+    plt.plot(
+        ns,
+        [
+            p
+            for n in ns
+            for _, p in [tau_p_revised(n, W, m, R)]
+        ],
+        color=cmap(i),
+        linestyle='--',
+        alpha=.5,
+    )
+
+    simulated: NDArray[...] = np.asarray([
+        (n, grand_mean, grand_mean - ci[0])
+        for n in [5, 10, 15, 20, 30, 50]
+        for logs in [pd.read_csv(f'assets/2010.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)]
+        for contenders in [logs.iloc[:, 1:1 + n]]
+        for successes in [np.count_nonzero(contenders, 1) == 1]
+        for station2successes_s in [np.where(successes[:, np.newaxis], contenders, 0).reshape(b, batch_size, n)]
+        for station2collisions_s in [np.where(successes[:, np.newaxis], 0, contenders).reshape(b, batch_size, n)]
+        for collision_p_s in [np.mean(
+            np.sum(station2collisions_s, axis=1) / np.sum(station2collisions_s + station2successes_s, axis=1),
+            axis=1
+        )]
+        for grand_mean in [np.mean(collision_p_s)]
+        for ci in [sp.stats.t.interval(confidence=.95, loc=grand_mean, scale=sp.stats.sem(collision_p_s), df=b - 1)]
+    ])
+
+    ax.errorbar(
+        simulated[:, 0],
+        simulated[:, 1],
+        simulated[:, 2],
+        marker=4,
+        capsize=4,
+        linestyle='',
+        color=cmap(i),
+    )
+
+ax.set_xticks(range(0, 51, 5))
+ax.grid(True, linestyle='--')
+ax.set_title(f'2010 $W = {W}, R = {R}$')
+ax.set_ylabel('$p$')
+ax.set_xlabel('STAs')
+ax.legend(
+    handles=[
+                matplotlib.patches.Patch(
+                    color='black',
+                    label='Official',
+                )
+            ] + [
+                matplotlib.patches.Patch(
+                    color=cmap(i),
+                    label=f'$m = {m}$',
+                )
+                for i, m in enumerate([3, 5, 7, 9])
+            ]
+)
+f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
+f.savefig(out / f'2010.focus-p.W = {W}, R = {R}.pgf')

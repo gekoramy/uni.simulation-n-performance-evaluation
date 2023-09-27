@@ -97,7 +97,7 @@ for n, W, m, R in tqdm([(n, W, m, R) for n in [5, 10, 15, 20, 30, 50] for W in [
 # %%
 for n, W, m, R in tqdm([(n, W, m, R) for n in [5, 10, 15, 20, 30, 50] for W in [32] for m in [3, 5, 7, 9] for R in [9]]):
     ls: list[Log] = mit.take(
-        100 * 5_000,
+        1_000 * 5_000,
         simulation(shop, n=n, W=W, m=m, R=R)
     )
 
