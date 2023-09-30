@@ -1,8 +1,8 @@
 # %%
 from matplotlib import colors
 from numpy.typing import NDArray
-from scipy.optimize import fsolve
 from pathlib import Path
+from scipy.optimize import fsolve, minimize_scalar, OptimizeResult
 
 import itertools as it
 import matplotlib
@@ -13,6 +13,9 @@ import scipy as sp
 import typing as t
 
 # %%
+thrghpt: Path = Path('assets/throughput')
+thrghpt.mkdir(parents=True, exist_ok=True)
+
 out: Path = Path('assets/graph')
 out.mkdir(parents=True, exist_ok=True)
 
@@ -595,3 +598,170 @@ ax.set_title(f'2000 $W = {W}, m = {m}$')
 
 f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
 f.savefig(out / f'2000.p-init-bias.W = {W}, m = {m}.pgf')
+
+# %%
+m: int = 6
+
+# %%
+f: plt.Figure
+ax: plt.Axes
+f, (ax1, ax2) = plt.subplots(1, 2, sharey='all')
+
+for i, n in enumerate([5, 10, 20, 50]):
+    simulated: NDArray[...] = np.asarray([
+        (x, grand_mean, grand_mean - ci[0])
+        for x, W in enumerate(2 ** np.arange(3, 3 + 8))
+        for logs in [pd.read_csv(f'assets/2000.n={n} W={W} m={m}.csv', nrows=b * batch_size)]
+        for contenders in [logs.iloc[:, 1:1 + n]]
+        for successes in [np.count_nonzero(contenders, 1) == 1]
+        for spans in [logs.iloc[:, 0] * slot_time]
+        for ts in [np.where(
+            successes,
+            BAS_time_success(sifs, difs, phy_h, mac_h, payload, ack, channel_bit_rate, propagation_delay),
+            BAS_time_collision(difs, phy_h, mac_h, payload, channel_bit_rate, propagation_delay),
+        )]
+        for success in [successes * payload]  # bit
+        for span_end in [spans + ts]  # mus
+        for success_s in [success.reshape(b, batch_size)]  # bit
+        for span_end_s in [span_end.to_numpy().reshape(b, batch_size)]  # mus
+        for throughput_s in [np.sum(success_s, 1) / np.sum(span_end_s, 1)]  # bit/mus -> Mbit/s
+        for grand_mean in [np.mean(throughput_s)]
+        for ci in [sp.stats.t.interval(confidence=.95, loc=grand_mean, scale=sp.stats.sem(throughput_s), df=b - 1)]
+    ])
+
+    ax1.errorbar(
+        simulated[:, 0],
+        simulated[:, 1],
+        simulated[:, 2],
+        marker=4,
+        capsize=4,
+        color=f'C{i}',
+        label=f'$n = {n}$',
+    )
+
+    pd.DataFrame(simulated[:, 1:], columns=['S', 'CI']).to_csv(thrghpt / f'BAS.maximum.n={n} m={m}.csv')
+
+    simulated: NDArray[...] = np.asarray([
+        (x, grand_mean, grand_mean - ci[0])
+        for x, W in enumerate(2 ** np.arange(3, 3 + 8))
+        for logs in [pd.read_csv(f'assets/2000.n={n} W={W} m={m}.csv', nrows=b * batch_size)]
+        for contenders in [logs.iloc[:, 1:1 + n]]
+        for successes in [np.count_nonzero(contenders, 1) == 1]
+        for spans in [logs.iloc[:, 0] * slot_time]
+        for ts in [np.where(
+            successes,
+            RTSCTS_time_success(sifs, difs, phy_h, mac_h, payload, ack, channel_bit_rate, propagation_delay, rts, cts),
+            RTSCTS_time_collision(difs, channel_bit_rate, propagation_delay, rts),
+        )]
+        for success in [successes * payload]  # bit
+        for span_end in [spans + ts]  # mus
+        for success_s in [success.reshape(b, batch_size)]  # bit
+        for span_end_s in [span_end.to_numpy().reshape(b, batch_size)]  # mus
+        for throughput_s in [np.sum(success_s, 1) / np.sum(span_end_s, 1)]  # bit/mus -> Mbit/s
+        for grand_mean in [np.mean(throughput_s)]
+        for ci in [sp.stats.t.interval(confidence=.95, loc=grand_mean, scale=sp.stats.sem(throughput_s), df=b - 1)]
+    ])
+
+    ax2.errorbar(
+        simulated[:, 0],
+        simulated[:, 1],
+        simulated[:, 2],
+        marker=4,
+        capsize=4,
+        color=f'C{i}',
+        label=f'$n = {n}$',
+    )
+
+    pd.DataFrame(simulated[:, 1:], columns=['S', 'CI']).to_csv(thrghpt / f'RTSCTS.maximum.n={n} m={m}.csv')
+
+for ax in [ax1, ax2]:
+    ax.set_xticks(range(8), 2 ** np.arange(3, 3 + 8))
+    ax.set_xlabel('$W$')
+    ax.grid(True, linestyle='--')
+
+ax1.set_title(f'BAS')
+ax1.set_ylabel('saturation throughput [Mbit/s]')
+
+ax2.set_title(f'RTS/CTS')
+ax2.legend()
+
+f.suptitle(f'2000 $m = {m}')
+f.subplots_adjust(wspace=.05)
+f.set_size_inches(w=3.5 * 2.5 * 2, h=4.8 * 3.5 * 2.5 / 6.4)
+f.savefig(out / f'2000.throughput-vs-W.m = {m}.pgf')
+
+# %%
+f: plt.Figure
+ax: plt.Axes
+f, (ax1, ax2) = plt.subplots(1, 2, sharey='all')
+
+fn1: t.Callable[[float], float] = lambda tau: S(
+    n=n, payload=payload, slot_time=slot_time, tau=tau,
+    Ts=BAS_time_success(sifs, difs, phy_h, mac_h, payload, ack, channel_bit_rate, propagation_delay),
+    Tc=BAS_time_collision(difs, phy_h, mac_h, payload, channel_bit_rate, propagation_delay),
+)
+fn2: t.Callable[[float], float] = lambda tau: S(
+    n=n, payload=payload, slot_time=slot_time, tau=tau,
+    Ts=RTSCTS_time_success(sifs, difs, phy_h, mac_h, payload, ack, channel_bit_rate, propagation_delay, rts, cts),
+    Tc=RTSCTS_time_collision(difs, channel_bit_rate, propagation_delay, rts),
+)
+
+for i, n in enumerate([5, 10, 20, 50]):
+    xs: NDArray[float] = np.linspace(-.2, .3, 30_000)
+
+    for ax, fn in zip([ax1, ax2], [fn1, fn2]):
+        ax.plot(
+            xs,
+            fn(xs),
+            color=f'C{i}',
+            alpha=.5,
+            label=f'$n = {n}$',
+        )
+
+        xopt: OptimizeResult = minimize_scalar(
+            fun=lambda x: -fn(x),
+            bounds=(0, 1),
+        )
+        ax.scatter(
+            xopt.x,
+            -xopt.fun,
+            marker='2',
+            color=f'C{i}',
+        )
+
+    for ax, mode in zip([ax1, ax2], ['BAS', 'RTSCTS']):
+        simulated: pd.DataFrame = pd.read_csv(thrghpt / f'{mode}.maximum.n={n} m={m}.csv')
+
+        idxmax: int = simulated['S'].idxmax()
+        maximum: pd.DataFrame = simulated.loc[idxmax]
+
+        ax.errorbar(
+            tau_p(n, 2 ** (3 + idxmax), m)[0],
+            maximum['S'],
+            maximum['CI'],
+            marker=4,
+            capsize=4,
+            linestyle='',
+            color=f'C{i}',
+        )
+
+for ax in [ax1, ax2]:
+    ax.set_ylim(.4, .9)
+    ax.set_xlabel(r'$\tau$')
+    ax.grid(True, linestyle='--')
+
+ax1.set_title(f'BAS')
+ax1.set_xlim(0, .1)
+ax1.set_ylabel('saturation throughput [Mbit/s]')
+
+ax2.set_title(f'RTS/CTS')
+ax2.set_xlim(0, .25)
+
+ax2.scatter(-1, 0, marker='2', color='black', label='model', alpha=.5),
+ax2.errorbar(-1, 0, 1, marker=4, capsize=4, linestyle='', color='black', label='simulated', alpha=.5)
+ax2.legend()
+
+f.suptitle(f'2000 $m = {m}')
+f.subplots_adjust(wspace=.05)
+f.set_size_inches(w=3.5 * 2.5 * 2, h=4.8 * 3.5 * 2.5 / 6.4)
+f.savefig(out / f'2000.model.throughput-vs-W.m = {m}.pgf')
