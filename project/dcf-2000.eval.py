@@ -170,7 +170,7 @@ ax2.grid(True, linestyle='--')
 ax1.set_title(f'2000 BAS $n = {n}, W = {W}, m = {m}$')
 f.subplots_adjust(hspace=0)
 f.set_size_inches(w=3.5 * 2.5 * 2, h=4.8 * 3.5 * 2.5 / 6.4)
-f.savefig(out / f'2000.BAS.throughput.n = {n}, W = {W}, m = {m}.pgf')
+f.savefig(out / f'2000.BAS.throughput.n = {n}, W = {W}, m = {m}.pgf', bbox_inches='tight')
 
 # %%
 contenders: pd.DataFrame = logs.iloc[:, 1:1 + n]
@@ -207,7 +207,7 @@ ax1.set_title(f'2000 $n = {n}, W = {W}, m = {m}$')
 ax1.set_yticks([.5, 1.5, 2.5, 3.5, 4.5], [f'STA \#{i + 1}' for i in range(n)])
 f.subplots_adjust(hspace=0)
 f.set_size_inches(w=3.5 * 2.5 * 2, h=4.8 * 3.5 * 2.5 / 6.4)
-f.savefig(out / f'2000.p.n = {n}, W = {W}, m = {m}.pgf')
+f.savefig(out / f'2000.p.n = {n}, W = {W}, m = {m}.pgf', bbox_inches='tight')
 
 # %%
 b: int = 50 // 2
@@ -289,7 +289,7 @@ ax2.set_xlabel('samples')
 f.subplots_adjust(hspace=0)
 ax1.set_title(f'2000 BAS $n = {n}, W = {W}, m = {m}$')
 f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
-f.savefig(out / f'2000.BAS.throughputs.n = {n}, W = {W}, m = {m}.pgf')
+f.savefig(out / f'2000.BAS.throughputs.n = {n}, W = {W}, m = {m}.pgf', bbox_inches='tight')
 
 # %%
 n: int = 30
@@ -362,7 +362,7 @@ ax.legend(
     ]
 )
 f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
-f.savefig(out / f'2000.BAS.multi-throughput.pgf')
+f.savefig(out / f'2000.BAS.multi-throughput.pgf', bbox_inches='tight')
 
 # %%
 ax: plt.Axes
@@ -432,7 +432,7 @@ ax.legend(
     ]
 )
 f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
-f.savefig(out / f'2000.RTSCTS.multi-throughput.pgf')
+f.savefig(out / f'2000.RTSCTS.multi-throughput.pgf', bbox_inches='tight')
 
 # %%
 b: int = 100
@@ -502,7 +502,7 @@ ax2.set_xlabel('samples')
 f.subplots_adjust(hspace=0)
 ax1.set_title(f'2000 $n = {n}, W = {W}, m = {m}$')
 f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
-f.savefig(out / f'2000.p.n = {n}, W = {W}, m = {m}.pgf')
+f.savefig(out / f'2000.p.n = {n}, W = {W}, m = {m}.pgf', bbox_inches='tight')
 
 # %%
 ax: plt.Axes
@@ -563,7 +563,7 @@ ax.legend(
     ]
 )
 f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
-f.savefig(out / f'2000.multi-p.pgf')
+f.savefig(out / f'2000.multi-p.pgf', bbox_inches='tight')
 
 # %%
 f: plt.Figure
@@ -597,7 +597,7 @@ ax.legend()
 ax.set_title(f'2000 $W = {W}, m = {m}$')
 
 f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
-f.savefig(out / f'2000.p-init-bias.W = {W}, m = {m}.pgf')
+f.savefig(out / f'2000.p-init-bias.W = {W}, m = {m}.pgf', bbox_inches='tight')
 
 # %%
 m: int = 6
@@ -688,7 +688,7 @@ ax2.legend()
 f.suptitle(f'2000 $m = {m}')
 f.subplots_adjust(wspace=.05)
 f.set_size_inches(w=3.5 * 2.5 * 2, h=4.8 * 3.5 * 2.5 / 6.4)
-f.savefig(out / f'2000.throughput-vs-W.m = {m}.pgf')
+f.savefig(out / f'2000.throughput-vs-W.m = {m}.pgf', bbox_inches='tight')
 
 # %%
 f: plt.Figure
@@ -764,4 +764,4 @@ ax2.legend()
 f.suptitle(f'2000 $m = {m}')
 f.subplots_adjust(wspace=.05)
 f.set_size_inches(w=3.5 * 2.5 * 2, h=4.8 * 3.5 * 2.5 / 6.4)
-f.savefig(out / f'2000.model.throughput-vs-W.m = {m}.pgf')
+f.savefig(out / f'2000.model.throughput-vs-W.m = {m}.pgf', bbox_inches='tight')
