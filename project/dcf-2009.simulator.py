@@ -92,7 +92,7 @@ for n, W, m, R in tqdm([(n, W, m, R) for n in [5, 10, 15, 20, 30, 50] for W in [
             ], axis=1, keys=['contenders', 'attempt'])
         ]
         , axis=1
-    ).to_csv(out / f'2010.n={n} W={W} m={m} R={R}.csv', index=False)
+    ).to_csv(out / f'2009.n={n} W={W} m={m} R={R}.csv', index=False)
 
 # %%
 for n, W, m, R in tqdm([(n, W, m, R) for n in [5, 10, 15, 20, 30, 50] for W in [32] for m in [3, 5, 7, 9] for R in [9]]):
@@ -110,4 +110,4 @@ for n, W, m, R in tqdm([(n, W, m, R) for n in [5, 10, 15, 20, 30, 50] for W in [
             ], axis=1, keys=['contenders', 'attempt'])
         ]
         , axis=1
-    ).to_csv(out / f'2010.n={n} W={W} m={m} R={R}.csv', index=False)
+    ).to_csv(out / f'2009.n={n} W={W} m={m} R={R}.csv', index=False)

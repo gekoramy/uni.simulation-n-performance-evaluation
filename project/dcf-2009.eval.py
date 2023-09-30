@@ -146,7 +146,7 @@ b: int = 500
 batch_size: int = 1_000
 
 # %%
-logs: pd.DataFrame = pd.read_csv(f'assets/2010.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)
+logs: pd.DataFrame = pd.read_csv(f'assets/2009.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)
 
 contenders: pd.DataFrame = logs.iloc[:, 1:1 + n]
 successes: NDArray[bool] = np.count_nonzero(contenders, 1) == 1
@@ -232,9 +232,9 @@ for ax in [ax1, ax2]:
 ax2.set_xlabel('samples')
 # ax2.set_yticks(np.around(np.append(grand_mean, ci), decimals=3))
 f.subplots_adjust(hspace=0)
-ax1.set_title(f'2010 BAS $n = {n}, W = {W}, m = {m}, R = {R}$')
+ax1.set_title(f'2009 BAS $n = {n}, W = {W}, m = {m}, R = {R}$')
 f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
-f.savefig(out / f'2010.BAS.throughputs.n = {n}, W = {W}, m = {m}, R = {R}.pgf', bbox_inches='tight')
+f.savefig(out / f'2009.BAS.throughputs.n = {n}, W = {W}, m = {m}, R = {R}.pgf', bbox_inches='tight')
 
 # %%
 ax: plt.Axes
@@ -279,7 +279,7 @@ for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 
     simulated: NDArray[...] = np.asarray([
         (n, grand_mean, grand_mean - ci[0])
         for n in [5, 10, 15, 20, 30, 50]
-        for logs in [pd.read_csv(f'assets/2010.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)]
+        for logs in [pd.read_csv(f'assets/2009.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)]
         for contenders in [logs.iloc[:, 1:1 + n]]
         for successes in [np.count_nonzero(contenders, 1) == 1]
         for spans in [logs.iloc[:, 0] * slot_time]
@@ -309,7 +309,7 @@ for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 
 
 ax.set_xticks(range(0, 51, 5))
 ax.grid(True, linestyle='--')
-ax.set_title('2010 BAS')
+ax.set_title('2009 BAS')
 ax.set_ylabel('saturation throughput [Mbit/s]')
 ax.set_xlabel('STAs')
 ax.legend(
@@ -322,7 +322,7 @@ ax.legend(
     ]
 )
 f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
-f.savefig(out / f'2010.BAS.multi-throughput.pgf', bbox_inches='tight')
+f.savefig(out / f'2009.BAS.multi-throughput.pgf', bbox_inches='tight')
 
 # %%
 ax: plt.Axes
@@ -367,7 +367,7 @@ for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 
     simulated: NDArray[...] = np.asarray([
         (n, grand_mean, grand_mean - ci[0])
         for n in [5, 10, 15, 20, 30, 50]
-        for logs in [pd.read_csv(f'assets/2010.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)]
+        for logs in [pd.read_csv(f'assets/2009.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)]
         for contenders in [logs.iloc[:, 1:1 + n]]
         for successes in [np.count_nonzero(contenders, 1) == 1]
         for spans in [logs.iloc[:, 0] * slot_time]
@@ -397,7 +397,7 @@ for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 
 
 ax.set_xticks(range(0, 51, 5))
 ax.grid(True, linestyle='--')
-ax.set_title('2010 RTS/CTS')
+ax.set_title('2009 RTS/CTS')
 ax.set_ylabel('saturation throughput [Mbit/s]')
 ax.set_xlabel('STAs')
 ax.legend(
@@ -410,14 +410,14 @@ ax.legend(
     ]
 )
 f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
-f.savefig(out / f'2010.RTSCTS.multi-throughput.pgf', bbox_inches='tight')
+f.savefig(out / f'2009.RTSCTS.multi-throughput.pgf', bbox_inches='tight')
 
 # %%
 b: int = 100
 batch_size: int = 5_000
 
 # %%
-logs: pd.DataFrame = pd.read_csv(f'assets/2010.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)
+logs: pd.DataFrame = pd.read_csv(f'assets/2009.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)
 
 contenders: pd.DataFrame = logs.iloc[:, 1:1 + n]
 successes: NDArray[bool] = np.count_nonzero(contenders, 1) == 1
@@ -486,9 +486,9 @@ for ax in [ax1, ax2]:
 ax2.set_xlabel('samples')
 # ax2.set_yticks(np.around(np.append(grand_mean, ci), decimals=3))
 f.subplots_adjust(hspace=0)
-ax1.set_title(f'2010 $n = {n}, W = {W}, m = {m}, R = {R}$')
+ax1.set_title(f'2009 $n = {n}, W = {W}, m = {m}, R = {R}$')
 f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
-f.savefig(out / f'2010.p.n = {n}, W = {W}, m = {m}, R = {R}.pgf', bbox_inches='tight')
+f.savefig(out / f'2009.p.n = {n}, W = {W}, m = {m}, R = {R}.pgf', bbox_inches='tight')
 
 # %%
 ax: plt.Axes
@@ -523,7 +523,7 @@ for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 
     simulated: NDArray[...] = np.asarray([
         (n, grand_mean, grand_mean - ci[0])
         for n in [5, 10, 15, 20, 30, 50]
-        for logs in [pd.read_csv(f'assets/2010.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)]
+        for logs in [pd.read_csv(f'assets/2009.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)]
         for contenders in [logs.iloc[:, 1:1 + n]]
         for successes in [np.count_nonzero(contenders, 1) == 1]
         for station2successes_s in [np.where(successes[:, np.newaxis], contenders, 0).reshape(b, batch_size, n)]
@@ -548,7 +548,7 @@ for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 
 
 ax.set_xticks(range(0, 51, 5))
 ax.grid(True, linestyle='--')
-ax.set_title('2010')
+ax.set_title('2009')
 ax.set_ylabel('$p$')
 ax.set_xlabel('STAs')
 ax.legend(
@@ -561,7 +561,7 @@ ax.legend(
     ]
 )
 f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
-f.savefig(out / f'2010.multi-p.pgf', bbox_inches='tight')
+f.savefig(out / f'2009.multi-p.pgf', bbox_inches='tight')
 
 # %%
 f: plt.Figure
@@ -574,7 +574,7 @@ R: int = 5
 samples: int = 10_000
 
 for i, n in enumerate([5, 10, 15, 20, 30, 50]):
-    logs: pd.DataFrame = pd.read_csv(f'assets/2010.n={n} W={W} m={m} R={R}.csv', nrows=samples)
+    logs: pd.DataFrame = pd.read_csv(f'assets/2009.n={n} W={W} m={m} R={R}.csv', nrows=samples)
 
     contenders: pd.DataFrame = logs.iloc[:, 1:1 + n]
     successes: NDArray[bool] = np.count_nonzero(contenders, 1) == 1
@@ -593,10 +593,10 @@ ax.set_ylabel('$p$')
 ax.set_xlabel('contentions')
 ax.grid(True, linestyle='--')
 ax.legend()
-ax.set_title(f'2010 $W = {W}, m = {m}$')
+ax.set_title(f'2009 $W = {W}, m = {m}$')
 
 f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
-f.savefig(out / f'2010.p-init-bias.W = {W}, m = {m}, R = {R}.pgf', bbox_inches='tight')
+f.savefig(out / f'2009.p-init-bias.W = {W}, m = {m}, R = {R}.pgf', bbox_inches='tight')
 
 # %%
 b: int = 500
@@ -647,7 +647,7 @@ for i, m in enumerate([3, 5, 7, 9]):
     simulated: NDArray[...] = np.asarray([
         (n, grand_mean, grand_mean - ci[0])
         for n in [5, 10, 15, 20, 30, 50]
-        for logs in [pd.read_csv(f'assets/2010.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)]
+        for logs in [pd.read_csv(f'assets/2009.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)]
         for contenders in [logs.iloc[:, 1:1 + n]]
         for successes in [np.count_nonzero(contenders, 1) == 1]
         for spans in [logs.iloc[:, 0] * slot_time]
@@ -677,7 +677,7 @@ for i, m in enumerate([3, 5, 7, 9]):
 
 ax.set_xticks(range(0, 51, 5))
 ax.grid(True, linestyle='--')
-ax.set_title(f'2010 BAS $W = {W}, R = {R}$')
+ax.set_title(f'2009 BAS $W = {W}, R = {R}$')
 ax.set_ylabel('saturation throughput [Mbit/s]')
 ax.set_xlabel('STAs')
 ax.legend(
@@ -695,7 +695,7 @@ ax.legend(
             ]
 )
 f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
-f.savefig(out / f'2010.BAS.focus-throughput.W = {W}, R = {R}.pgf', bbox_inches='tight')
+f.savefig(out / f'2009.BAS.focus-throughput.W = {W}, R = {R}.pgf', bbox_inches='tight')
 
 # %%
 ax: plt.Axes
@@ -740,7 +740,7 @@ for i, m in enumerate([3, 5, 7, 9]):
     simulated: NDArray[...] = np.asarray([
         (n, grand_mean, grand_mean - ci[0])
         for n in [5, 10, 15, 20, 30, 50]
-        for logs in [pd.read_csv(f'assets/2010.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)]
+        for logs in [pd.read_csv(f'assets/2009.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)]
         for contenders in [logs.iloc[:, 1:1 + n]]
         for successes in [np.count_nonzero(contenders, 1) == 1]
         for spans in [logs.iloc[:, 0] * slot_time]
@@ -770,7 +770,7 @@ for i, m in enumerate([3, 5, 7, 9]):
 
 ax.set_xticks(range(0, 51, 5))
 ax.grid(True, linestyle='--')
-ax.set_title(f'2010 RTS/CTS $W = {W}, R = {R}$')
+ax.set_title(f'2009 RTS/CTS $W = {W}, R = {R}$')
 ax.set_ylabel('saturation throughput [Mbit/s]')
 ax.set_xlabel('STAs')
 ax.legend(
@@ -788,7 +788,7 @@ ax.legend(
             ]
 )
 f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
-f.savefig(out / f'2010.RTSCTS.focus-throughput.W = {W}, R = {R}.pgf', bbox_inches='tight')
+f.savefig(out / f'2009.RTSCTS.focus-throughput.W = {W}, R = {R}.pgf', bbox_inches='tight')
 
 # %%
 b: int = 500
@@ -827,7 +827,7 @@ for i, m in enumerate([3, 5, 7, 9]):
     simulated: NDArray[...] = np.asarray([
         (n, grand_mean, grand_mean - ci[0])
         for n in [5, 10, 15, 20, 30, 50]
-        for logs in [pd.read_csv(f'assets/2010.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)]
+        for logs in [pd.read_csv(f'assets/2009.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)]
         for contenders in [logs.iloc[:, 1:1 + n]]
         for successes in [np.count_nonzero(contenders, 1) == 1]
         for station2successes_s in [np.where(successes[:, np.newaxis], contenders, 0).reshape(b, batch_size, n)]
@@ -852,7 +852,7 @@ for i, m in enumerate([3, 5, 7, 9]):
 
 ax.set_xticks(range(0, 51, 5))
 ax.grid(True, linestyle='--')
-ax.set_title(f'2010 $W = {W}, R = {R}$')
+ax.set_title(f'2009 $W = {W}, R = {R}$')
 ax.set_ylabel('$p$')
 ax.set_xlabel('STAs')
 ax.legend(
@@ -870,4 +870,4 @@ ax.legend(
             ]
 )
 f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
-f.savefig(out / f'2010.focus-p.W = {W}, R = {R}.pgf', bbox_inches='tight')
+f.savefig(out / f'2009.focus-p.W = {W}, R = {R}.pgf', bbox_inches='tight')
