@@ -1,4 +1,5 @@
 # %%
+from matplotlib import colors
 from numpy.typing import NDArray
 from scipy.optimize import fsolve
 from pathlib import Path
@@ -9,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy as sp
+import typing as t
 
 # %%
 out: Path = Path('assets/graph')
@@ -38,14 +40,12 @@ def tau_p(n: int, cw_min: int, m: int) -> tuple[float, float]:
 
 def S(
         n: int,
-        cw_min: int,
-        m: int,
         payload: int,
         slot_time: int,
+        tau: float,
         Ts: float,
         Tc: float,
 ) -> float:
-    tau, p = tau_p(n, cw_min, m)
     Ptr: float = 1 - (1 - tau) ** n
     Ps: float = (n * tau * (1 - tau) ** (n - 1)) / Ptr
     return (Ps * Ptr * payload) / ((1 - Ptr) * slot_time + Ptr * Ps * Ts + Ptr * (1 - Ps) * Tc)  # bit / mus -> Mbit / s
@@ -66,16 +66,14 @@ def BAS_time_success(
 
 
 def BAS_time_collision(
-        sifs: int,
         difs: int,
         phy_h: int,
         mac_h: int,
         payload: int,
-        ack: int,
         channel_bit_rate: int,
         propagation_delay: int,
 ) -> float:
-    return sifs + difs + (phy_h + mac_h + payload + ack) / channel_bit_rate + 2 * propagation_delay
+    return difs + (phy_h + mac_h + payload) / channel_bit_rate + propagation_delay
 
 
 def RTSCTS_time_success(
@@ -118,7 +116,7 @@ difs: int = 128
 ack_to: int = 300
 cts_to: int = 300
 
-n: int = 30  # nodes
+n: int = 5  # nodes
 W: int = 2 ** 5
 m: int = 5  # max # of attempts
 
@@ -133,7 +131,7 @@ spans: NDArray[int] = logs.iloc[:, 0] * slot_time
 ts: NDArray[int] = np.where(
     successes,
     BAS_time_success(sifs, difs, phy_h, mac_h, payload, ack, channel_bit_rate, propagation_delay),
-    BAS_time_collision(sifs, difs, phy_h, mac_h, payload, ack, channel_bit_rate, propagation_delay),
+    BAS_time_collision(difs, phy_h, mac_h, payload, channel_bit_rate, propagation_delay),
 )
 
 # %%
@@ -141,8 +139,7 @@ merge: NDArray[int] = np.empty(ts.shape[0] * 2, dtype=int)
 merge[0::2] = spans
 merge[1::2] = ts
 
-mmm: NDArray[int] = np.zeros(ts.shape[0] * 2, dtype=int)
-mmm[0::2] = np.where(successes, 1, -1)
+mmm: NDArray[int] = np.repeat(np.where(successes, 1, -1), 2)
 
 success: NDArray[int] = successes * payload  # bit
 
@@ -153,14 +150,15 @@ throughput: NDArray[float] = np.cumsum(success) / np.cumsum(span_end)  # bit/mus
 f: plt.Figure
 ax1: plt.Axes
 ax2: plt.Axes
-f, (ax1, ax2) = plt.subplots(2, 1, sharex='all', height_ratios=[1, 3])
+f, (ax1, ax2) = plt.subplots(2, 1, sharex='all', height_ratios=[1, 5])
 
-ax1.fill_between(np.cumsum(merge) / 1e6, np.where(mmm < 0, 0, mmm), step='post', color='#6CCDAF')
-ax1.fill_between(np.cumsum(merge) / 1e6, np.where(mmm > 0, 0, mmm), step='post', color='#ED706B')
+ax1.fill_between(np.cumsum(merge) / 1e6, 1, where=mmm > 0, color='#6CCDAF')
+ax1.fill_between(np.cumsum(merge) / 1e6, 1, where=mmm < 0, color='#ED706B')
 
 ax2.plot(np.cumsum(span_end) / 1e6, throughput)
 
 ax1.set_ylabel('channel usage')
+ax1.set_ylim(-.5, 1.5)
 ax1.set_yticks([])
 ax2.set_ylabel('throughput [Mbit/s]')
 ax2.set_xlabel('time [s]')
@@ -168,7 +166,7 @@ ax2.grid(True, linestyle='--')
 
 ax1.set_title(f'2000 BAS $n = {n}, W = {W}, m = {m}$')
 f.subplots_adjust(hspace=0)
-f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
+f.set_size_inches(w=3.5 * 2.5 * 2, h=4.8 * 3.5 * 2.5 / 6.4)
 f.savefig(out / f'2000.BAS.throughput.n = {n}, W = {W}, m = {m}.pgf')
 
 # %%
@@ -177,28 +175,40 @@ contenders: pd.DataFrame = logs.iloc[:, 1:1 + n]
 station2successes = np.where(successes[:, np.newaxis], contenders, 0)
 station2collisions = np.where(successes[:, np.newaxis], 0, contenders)
 
-collision_p: NDArray[float] = np.mean(
-    np.cumsum(station2collisions, axis=0) / np.cumsum(station2collisions + station2successes, axis=0),
-    axis=1
-)
+station2collision_p: NDArray[float] = np.cumsum(station2collisions, axis=0) / np.cumsum(station2collisions + station2successes, axis=0)
 
-ax: plt.Axes
-f, ax = plt.subplots(1, 1)
+f: plt.Figure
+ax1: plt.Axes
+ax2: plt.Axes
+f, (ax1, ax2) = plt.subplots(2, 1, sharex='all', height_ratios=[1, 3])
 
-ax.plot(range(samples), collision_p)
+cmap: colors.ListedColormap = colors.ListedColormap(['#ED706B', 'white', '#6CCDAF'])
 
-ax.set_ylabel('$p$')
-ax.set_xlabel('contentions')
-ax.grid(True, linestyle='--')
+ax1.pcolor(station2successes.T - station2collisions.T, cmap=cmap, vmin=-1, vmax=1)
 
-ax.set_title(f'2000 $n = {n}, W = {W}, m = {m}$')
+for collision_p in station2collision_p.T:
+    ax2.plot(
+        range(samples),
+        collision_p,
+        color='grey',
+        alpha=.2,
+    )
 
-f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
+ax2.plot(range(samples), np.mean(station2collision_p, axis=1))
+
+ax2.set_ylabel('$p$')
+ax2.set_xlabel('contentions')
+ax2.grid(True, axis='y', linestyle='--')
+
+ax1.set_title(f'2000 $n = {n}, W = {W}, m = {m}$')
+ax1.set_yticks([.5, 1.5, 2.5, 3.5, 4.5], [f'STA \#{i + 1}' for i in range(n)])
+f.subplots_adjust(hspace=0)
+f.set_size_inches(w=3.5 * 2.5 * 2, h=4.8 * 3.5 * 2.5 / 6.4)
 f.savefig(out / f'2000.p.n = {n}, W = {W}, m = {m}.pgf')
 
 # %%
-b: int = 500
-batch_size: int = 1_000
+b: int = 50 // 2
+batch_size: int = 10_000 * 2
 
 # %%
 logs: pd.DataFrame = pd.read_csv(f'assets/2000.n={n} W={W} m={m}.csv', nrows=b * batch_size)
@@ -210,7 +220,7 @@ spans: NDArray[int] = logs.iloc[:, 0] * slot_time
 ts: NDArray[int] = np.where(
     successes,
     BAS_time_success(sifs, difs, phy_h, mac_h, payload, ack, channel_bit_rate, propagation_delay),
-    BAS_time_collision(sifs, difs, phy_h, mac_h, payload, ack, channel_bit_rate, propagation_delay),
+    BAS_time_collision(difs, phy_h, mac_h, payload, channel_bit_rate, propagation_delay),
 )
 
 success: NDArray[int] = successes * payload  # bit
@@ -237,7 +247,7 @@ ax1.hlines(
     y=throughput_s,
     xmin=np.arange(0, b) * batch_size,
     xmax=(np.arange(0, b) + 1) * batch_size,
-    colors=[f'C{i}' for i in range(b)],
+    colors=['grey' for _ in range(b)],
     alpha=.2,
 )
 
@@ -259,9 +269,9 @@ for ax in [ax1, ax2]:
     )
     ax.axhline(
         S(
-            n=n, cw_min=W, m=m, payload=payload, slot_time=slot_time,
+            n=n, payload=payload, slot_time=slot_time, tau=tau_p(n=n, cw_min=W, m=m)[0],
             Ts=BAS_time_success(sifs, difs, phy_h, mac_h, payload, ack, channel_bit_rate, propagation_delay),
-            Tc=BAS_time_collision(sifs, difs, phy_h, mac_h, payload, ack, channel_bit_rate, propagation_delay)
+            Tc=BAS_time_collision(difs, phy_h, mac_h, payload, channel_bit_rate, propagation_delay)
         ),
         alpha=.5,
         label=r'$S$',
@@ -279,6 +289,9 @@ f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
 f.savefig(out / f'2000.BAS.throughputs.n = {n}, W = {W}, m = {m}.pgf')
 
 # %%
+n: int = 30
+
+# %%
 ax: plt.Axes
 f, ax = plt.subplots(1, 1)
 
@@ -289,9 +302,9 @@ for i, (W, m) in enumerate(it.product([32, 128, 256], [3, 5])):
         ns,
         [
             S(
-                n=n, cw_min=W, m=m, payload=payload, slot_time=slot_time,
+                n=n, payload=payload, slot_time=slot_time, tau=tau_p(n=n, cw_min=W, m=m)[0],
                 Ts=BAS_time_success(sifs, difs, phy_h, mac_h, payload, ack, channel_bit_rate, propagation_delay),
-                Tc=BAS_time_collision(sifs, difs, phy_h, mac_h, payload, ack, channel_bit_rate, propagation_delay),
+                Tc=BAS_time_collision(difs, phy_h, mac_h, payload, channel_bit_rate, propagation_delay),
             )
             for n
             in ns
@@ -310,7 +323,7 @@ for i, (W, m) in enumerate(it.product([32, 128, 256], [3, 5])):
         for ts in [np.where(
             successes,
             BAS_time_success(sifs, difs, phy_h, mac_h, payload, ack, channel_bit_rate, propagation_delay),
-            BAS_time_collision(sifs, difs, phy_h, mac_h, payload, ack, channel_bit_rate, propagation_delay),
+            BAS_time_collision(difs, phy_h, mac_h, payload, channel_bit_rate, propagation_delay),
         )]
         for success in [successes * payload]  # bit
         for span_end in [spans + ts]  # mus
@@ -359,7 +372,7 @@ for i, (W, m) in enumerate(it.product([32, 128, 256], [3, 5])):
         ns,
         [
             S(
-                n=n, cw_min=W, m=m, payload=payload, slot_time=slot_time,
+                n=n, payload=payload, slot_time=slot_time, tau=tau_p(n=n, cw_min=W, m=m)[0],
                 Ts=RTSCTS_time_success(sifs, difs, phy_h, mac_h, payload, ack, channel_bit_rate, propagation_delay, rts, cts),
                 Tc=RTSCTS_time_collision(difs, channel_bit_rate, propagation_delay, rts),
             )
