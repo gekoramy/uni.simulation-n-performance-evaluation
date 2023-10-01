@@ -43,20 +43,15 @@ def tau_p(n: int, W: int, R: int) -> tuple[float, float]:
 
 
 def tau_p_revised(n: int, W: int, m: int, R: int) -> tuple[float, float]:
-    if R <= m:
-        def system(x: tuple[float, float]) -> tuple[float, float]:
-            tau, p = x
-            return (
-                - p + 1 - (1 - tau) ** (n - 1),
-                - tau + 1 / (1 + (1 - p) / (2 * (1 - p ** (R + 1))) * sum([p ** j * (W * 2 ** j - 1) - (1 - p ** (R + 1)) for j in range(R + 1)]))
-            )
-    else:
-        def system(x: tuple[float, float]) -> tuple[float, float]:
-            tau, p = x
-            return (
-                - p + 1 - (1 - tau) ** (n - 1),
-                - tau + 1 / (1 + (1 - p) / (2 * (1 - p ** (R + 1))) * sum([p ** j * (W * 2 ** min(m, j) - 1) - (1 - p ** (R + 1)) for j in range(R + 1)]))
-            )
+    def system(x: tuple[float, float]) -> tuple[float, float]:
+        tau, p = x
+        return (
+            - p + 1 - (1 - tau) ** (n - 1),
+            - tau + 1 / (1 + (1 - p) / (2 * (1 - p ** (R + 1))) * sum([
+                p ** j * (W * 2 ** min(m, j) - 1) - (1 - p ** (R + 1))
+                for j in range(R + 1)
+            ]))
+        )
 
     return fsolve(system, x0=np.full(2, .5))
 
