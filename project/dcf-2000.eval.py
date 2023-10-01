@@ -118,9 +118,7 @@ channel_bit_rate: int = 1  # Mbit/s -> bit/mus DO NOT CHANGE OTHERWISE TIMESPANS
 propagation_delay: int = 1
 slot_time: int = 50
 sifs: int = 28
-difs: int = 128
-ack_to: int = 300
-cts_to: int = 300
+difs: int = sifs + 2 * slot_time
 
 n: int = 5  # nodes
 W: int = 2 ** 5
