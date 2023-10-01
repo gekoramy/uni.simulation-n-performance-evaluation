@@ -75,50 +75,6 @@ def S(
     sTc: float = Tc + slot_time
     return (Ps * sEP) / ((1 - Pb) * slot_time + Ps * sTs + (Pb - Ps) * sTc)
 
-
-# %%
-def BAS_time_success(
-        mpdu: int,
-        sifs: int,
-        difs: int,
-        ack: int,
-        channel_bit_rate: int,
-) -> float:
-    return (mpdu + ack) / channel_bit_rate + sifs + difs
-
-
-def BAS_time_collision(
-        mpdu: int,
-        sifs: int,
-        difs: int,
-        ack: int,
-        channel_bit_rate: int,
-) -> float:
-    return BAS_time_success(mpdu, sifs, difs, ack, channel_bit_rate)
-
-
-def RTSCTS_time_success(
-        mpdu: int,
-        sifs: int,
-        difs: int,
-        ack: int,
-        channel_bit_rate: int,
-        rts: int,
-        cts: int,
-) -> float:
-    return 3 * sifs + difs + (rts + cts + mpdu + ack) / channel_bit_rate
-
-
-def RTSCTS_time_collision(
-        sifs: int,
-        difs: int,
-        ack: int,
-        channel_bit_rate: int,
-        rts: int,
-) -> float:
-    return sifs + difs + (rts + ack) / channel_bit_rate
-
-
 # %%
 payload: int = 8 * 1500
 mac_h: int = 36
@@ -140,6 +96,13 @@ m: int = 5  # W max = W * 2 ** m
 R: int = m  # max # of retries
 
 # %%
+BAS_time_success: float = (mpdu + ack) / channel_bit_rate + sifs + difs
+BAS_time_collision: float = BAS_time_success
+
+RTSCTS_time_success: float = 3 * sifs + difs + (rts + cts + mpdu + ack) / channel_bit_rate
+RTSCTS_time_collision: float = sifs + difs + (rts + ack) / channel_bit_rate
+
+# %%
 samples: int = 200
 logs: pd.DataFrame = pd.read_csv(f'assets/2009.n={n} W={W} m={m} R={R}.csv', nrows=samples)
 
@@ -149,8 +112,8 @@ successes: NDArray[bool] = np.count_nonzero(contenders, 1) == 1
 spans: NDArray[int] = logs.iloc[:, 0] * slot_time
 ts: NDArray[int] = np.where(
     successes,
-    BAS_time_success(mpdu, sifs, difs, ack, channel_bit_rate),
-    BAS_time_collision(mpdu, sifs, difs, ack, channel_bit_rate),
+    BAS_time_success,
+    BAS_time_collision + slot_time,
 )
 
 # %%
@@ -241,8 +204,8 @@ successes: NDArray[bool] = np.count_nonzero(contenders, 1) == 1
 spans: NDArray[int] = logs.iloc[:, 0] * slot_time
 ts: NDArray[int] = np.where(
     successes,
-    BAS_time_success(mpdu, sifs, difs, ack, channel_bit_rate),
-    BAS_time_collision(mpdu, sifs, difs, ack, channel_bit_rate) + slot_time,
+    BAS_time_success,
+    BAS_time_collision + slot_time,
 )
 
 success: NDArray[int] = successes * payload  # bit
@@ -292,8 +255,8 @@ for ax in [ax1, ax2]:
     ax.axhline(
         S(
             n=n, W=W, payload=payload, slot_time=slot_time, tau=tau_p(n=n, W=W, R=R)[0],
-            Ts=BAS_time_success(mpdu, sifs, difs, ack, channel_bit_rate),
-            Tc=BAS_time_collision(mpdu, sifs, difs, ack, channel_bit_rate)
+            Ts=BAS_time_success,
+            Tc=BAS_time_collision
         ),
         alpha=.5,
         label=r'$S$',
@@ -330,8 +293,8 @@ for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 
             S(
                 n=n, W=W, payload=payload, slot_time=slot_time,
                 tau=tau_p(n, W, R)[0],
-                Ts=BAS_time_success(mpdu, sifs, difs, ack, channel_bit_rate),
-                Tc=BAS_time_collision(mpdu, sifs, difs, ack, channel_bit_rate)
+                Ts=BAS_time_success,
+                Tc=BAS_time_collision
             )
             for n
             in ns
@@ -346,8 +309,8 @@ for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 
             S(
                 n=n, W=W, payload=payload, slot_time=slot_time,
                 tau=tau_p_revised(n, W, m, R)[0],
-                Ts=BAS_time_success(mpdu, sifs, difs, ack, channel_bit_rate),
-                Tc=BAS_time_collision(mpdu, sifs, difs, ack, channel_bit_rate)
+                Ts=BAS_time_success,
+                Tc=BAS_time_collision
             )
             for n
             in ns
@@ -366,8 +329,8 @@ for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 
         for spans in [logs.iloc[:, 0] * slot_time]
         for ts in [np.where(
             successes,
-            BAS_time_success(mpdu, sifs, difs, ack, channel_bit_rate),
-            BAS_time_collision(mpdu, sifs, difs, ack, channel_bit_rate) + slot_time,
+            BAS_time_success,
+            BAS_time_collision + slot_time,
         )]
         for success in [successes * payload]  # bit
         for span_end in [spans + ts]  # mus
@@ -418,8 +381,8 @@ for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 
             S(
                 n=n, W=W, payload=payload, slot_time=slot_time,
                 tau=tau_p(n, W, R)[0],
-                Ts=RTSCTS_time_success(mpdu, sifs, difs, ack, channel_bit_rate, rts, cts),
-                Tc=RTSCTS_time_collision(mpdu, difs, ack, channel_bit_rate, rts),
+                Ts=RTSCTS_time_success,
+                Tc=RTSCTS_time_collision,
             )
             for n
             in ns
@@ -434,8 +397,8 @@ for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 
             S(
                 n=n, W=W, payload=payload, slot_time=slot_time,
                 tau=tau_p_revised(n, W, m, R)[0],
-                Ts=RTSCTS_time_success(mpdu, sifs, difs, ack, channel_bit_rate, rts, cts),
-                Tc=RTSCTS_time_collision(mpdu, difs, ack, channel_bit_rate, rts),
+                Ts=RTSCTS_time_success,
+                Tc=RTSCTS_time_collision,
             )
             for n
             in ns
@@ -454,8 +417,8 @@ for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 
         for spans in [logs.iloc[:, 0] * slot_time]
         for ts in [np.where(
             successes,
-            RTSCTS_time_success(mpdu, sifs, difs, ack, channel_bit_rate, rts, cts),
-            RTSCTS_time_collision(mpdu, difs, ack, channel_bit_rate, rts) + slot_time,
+            RTSCTS_time_success,
+            RTSCTS_time_collision + slot_time,
         )]
         for success in [successes * payload]  # bit
         for span_end in [spans + ts]  # mus
@@ -697,8 +660,8 @@ ax.plot(
         S(
             n=n, W=W, payload=payload, slot_time=slot_time,
             tau=tau_p(n, W, R)[0],
-            Ts=BAS_time_success(mpdu, sifs, difs, ack, channel_bit_rate),
-            Tc=BAS_time_collision(mpdu, sifs, difs, ack, channel_bit_rate)
+            Ts=BAS_time_success,
+            Tc=BAS_time_collision
         )
         for n
         in ns
@@ -714,8 +677,8 @@ for i, m in enumerate([3, 5, 7, 9]):
             S(
                 n=n, W=W, payload=payload, slot_time=slot_time,
                 tau=tau_p_revised(n, W, m, R)[0],
-                Ts=BAS_time_success(mpdu, sifs, difs, ack, channel_bit_rate),
-                Tc=BAS_time_collision(mpdu, sifs, difs, ack, channel_bit_rate)
+                Ts=BAS_time_success,
+                Tc=BAS_time_collision
             )
             for n
             in ns
@@ -734,8 +697,8 @@ for i, m in enumerate([3, 5, 7, 9]):
         for spans in [logs.iloc[:, 0] * slot_time]
         for ts in [np.where(
             successes,
-            BAS_time_success(mpdu, sifs, difs, ack, channel_bit_rate),
-            BAS_time_collision(mpdu, sifs, difs, ack, channel_bit_rate) + slot_time,
+            BAS_time_success,
+            BAS_time_collision + slot_time,
         )]
         for success in [successes * payload]  # bit
         for span_end in [spans + ts]  # mus
@@ -790,8 +753,8 @@ ax.plot(
         S(
             n=n, W=W, payload=payload, slot_time=slot_time,
             tau=tau_p(n, W, R)[0],
-            Ts=RTSCTS_time_success(mpdu, sifs, difs, ack, channel_bit_rate, rts, cts),
-            Tc=RTSCTS_time_collision(mpdu, difs, ack, channel_bit_rate, rts),
+            Ts=RTSCTS_time_success,
+            Tc=RTSCTS_time_collision,
         )
         for n
         in ns
@@ -807,8 +770,8 @@ for i, m in enumerate([3, 5, 7, 9]):
             S(
                 n=n, W=W, payload=payload, slot_time=slot_time,
                 tau=tau_p_revised(n, W, m, R)[0],
-                Ts=RTSCTS_time_success(mpdu, sifs, difs, ack, channel_bit_rate, rts, cts),
-                Tc=RTSCTS_time_collision(mpdu, difs, ack, channel_bit_rate, rts),
+                Ts=RTSCTS_time_success,
+                Tc=RTSCTS_time_collision,
             )
             for n
             in ns
@@ -827,8 +790,8 @@ for i, m in enumerate([3, 5, 7, 9]):
         for spans in [logs.iloc[:, 0] * slot_time]
         for ts in [np.where(
             successes,
-            RTSCTS_time_success(mpdu, sifs, difs, ack, channel_bit_rate, rts, cts),
-            RTSCTS_time_collision(mpdu, difs, ack, channel_bit_rate, rts) + slot_time,
+            RTSCTS_time_success,
+            RTSCTS_time_collision + slot_time,
         )]
         for success in [successes * payload]  # bit
         for span_end in [spans + ts]  # mus
