@@ -28,6 +28,9 @@ matplotlib.rcParams.update({
     'pgf.rcfonts': False,
 })
 
+width: float = 8.75
+height: float = 6.25
+
 
 # %%
 def tau_p(n: int, cw_min: int, m: int) -> tuple[float, float]:
@@ -169,7 +172,7 @@ ax2.grid(True, linestyle='--')
 
 ax1.set_title(f'2000 BAS $n = {n}, W = {W}, m = {m}$')
 f.subplots_adjust(hspace=0)
-f.set_size_inches(w=3.5 * 2.5 * 2, h=4.8 * 3.5 * 2.5 / 6.4)
+f.set_size_inches(w=width * 2, h=height * 2 / 3)
 f.savefig(out / f'2000.BAS.throughput.n = {n}, W = {W}, m = {m}.pgf', bbox_inches='tight')
 
 # %%
@@ -206,7 +209,7 @@ ax2.grid(True, axis='y', linestyle='--')
 ax1.set_title(f'2000 $n = {n}, W = {W}, m = {m}$')
 ax1.set_yticks([.5, 1.5, 2.5, 3.5, 4.5], [f'STA \#{i + 1}' for i in range(n)])
 f.subplots_adjust(hspace=0)
-f.set_size_inches(w=3.5 * 2.5 * 2, h=4.8 * 3.5 * 2.5 / 6.4)
+f.set_size_inches(w=width * 2, h=height * 2 / 3)
 f.savefig(out / f'2000.p.n = {n}, W = {W}, m = {m}.pgf', bbox_inches='tight')
 
 # %%
@@ -288,7 +291,7 @@ ax2.set_xlabel('samples')
 # ax2.set_yticks(np.around(np.append(grand_mean, ci), decimals=3))
 f.subplots_adjust(hspace=0)
 ax1.set_title(f'2000 BAS $n = {n}, W = {W}, m = {m}$')
-f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
+f.set_size_inches(w=width, h=height)
 f.savefig(out / f'2000.BAS.throughputs.n = {n}, W = {W}, m = {m}.pgf', bbox_inches='tight')
 
 # %%
@@ -361,7 +364,7 @@ ax.legend(
         for i, (W, m) in enumerate(it.product([32, 128, 256], [3, 5]))
     ]
 )
-f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
+f.set_size_inches(w=width, h=height)
 f.savefig(out / f'2000.BAS.multi-throughput.pgf', bbox_inches='tight')
 
 # %%
@@ -431,7 +434,7 @@ ax.legend(
         for i, (W, m) in enumerate(it.product([32, 128, 256], [3, 5]))
     ]
 )
-f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
+f.set_size_inches(w=width, h=height)
 f.savefig(out / f'2000.RTSCTS.multi-throughput.pgf', bbox_inches='tight')
 
 # %%
@@ -501,7 +504,7 @@ ax2.set_xlabel('samples')
 # ax2.set_yticks(np.around(np.append(grand_mean, ci), decimals=3))
 f.subplots_adjust(hspace=0)
 ax1.set_title(f'2000 $n = {n}, W = {W}, m = {m}$')
-f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
+f.set_size_inches(w=width, h=height)
 f.savefig(out / f'2000.p.n = {n}, W = {W}, m = {m}.pgf', bbox_inches='tight')
 
 # %%
@@ -562,7 +565,7 @@ ax.legend(
         for i, (W, m) in enumerate(it.product([32, 128, 256], [3, 5]))
     ]
 )
-f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
+f.set_size_inches(w=width, h=height)
 f.savefig(out / f'2000.multi-p.pgf', bbox_inches='tight')
 
 # %%
@@ -596,7 +599,7 @@ ax.grid(True, linestyle='--')
 ax.legend()
 ax.set_title(f'2000 $W = {W}, m = {m}$')
 
-f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
+f.set_size_inches(w=width, h=height)
 f.savefig(out / f'2000.p-init-bias.W = {W}, m = {m}.pgf', bbox_inches='tight')
 
 # %%
@@ -687,7 +690,7 @@ ax2.legend()
 
 f.suptitle(f'2000 $m = {m}')
 f.subplots_adjust(wspace=.05)
-f.set_size_inches(w=3.5 * 2.5 * 2, h=4.8 * 3.5 * 2.5 / 6.4)
+f.set_size_inches(w=width * 2, h=height)
 f.savefig(out / f'2000.throughput-vs-W.m = {m}.pgf', bbox_inches='tight')
 
 # %%
@@ -763,5 +766,5 @@ ax2.legend()
 
 f.suptitle(f'2000 $m = {m}')
 f.subplots_adjust(wspace=.05)
-f.set_size_inches(w=3.5 * 2.5 * 2, h=4.8 * 3.5 * 2.5 / 6.4)
+f.set_size_inches(w=width * 2, h=height)
 f.savefig(out / f'2000.model.throughput-vs-W.m = {m}.pgf', bbox_inches='tight')

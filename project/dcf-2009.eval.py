@@ -24,6 +24,9 @@ matplotlib.rcParams.update({
     'pgf.rcfonts': False,
 })
 
+width: float = 8.75
+height: float = 6.25
+
 cmap: Colormap = matplotlib.colormaps['Paired']
 
 
@@ -228,7 +231,7 @@ ax2.set_xlabel('samples')
 # ax2.set_yticks(np.around(np.append(grand_mean, ci), decimals=3))
 f.subplots_adjust(hspace=0)
 ax1.set_title(f'2009 BAS $n = {n}, W = {W}, m = {m}, R = {R}$')
-f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
+f.set_size_inches(w=width, h=height)
 f.savefig(out / f'2009.BAS.throughputs.n = {n}, W = {W}, m = {m}, R = {R}.pgf', bbox_inches='tight')
 
 # %%
@@ -316,7 +319,7 @@ ax.legend(
         for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 5] for R in [m, m + 2]]))
     ]
 )
-f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
+f.set_size_inches(w=width, h=height)
 f.savefig(out / f'2009.BAS.multi-throughput.pgf', bbox_inches='tight')
 
 # %%
@@ -404,7 +407,7 @@ ax.legend(
         for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 5] for R in [m, m + 2]]))
     ]
 )
-f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
+f.set_size_inches(w=width, h=height)
 f.savefig(out / f'2009.RTSCTS.multi-throughput.pgf', bbox_inches='tight')
 
 # %%
@@ -482,7 +485,7 @@ ax2.set_xlabel('samples')
 # ax2.set_yticks(np.around(np.append(grand_mean, ci), decimals=3))
 f.subplots_adjust(hspace=0)
 ax1.set_title(f'2009 $n = {n}, W = {W}, m = {m}, R = {R}$')
-f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
+f.set_size_inches(w=width, h=height)
 f.savefig(out / f'2009.p.n = {n}, W = {W}, m = {m}, R = {R}.pgf', bbox_inches='tight')
 
 # %%
@@ -555,7 +558,7 @@ ax.legend(
         for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 5] for R in [m, m + 2]]))
     ]
 )
-f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
+f.set_size_inches(w=width, h=height)
 f.savefig(out / f'2009.multi-p.pgf', bbox_inches='tight')
 
 # %%
@@ -590,7 +593,7 @@ ax.grid(True, linestyle='--')
 ax.legend()
 ax.set_title(f'2009 $W = {W}, m = {m}$')
 
-f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
+f.set_size_inches(w=width, h=height)
 f.savefig(out / f'2009.p-init-bias.W = {W}, m = {m}, R = {R}.pgf', bbox_inches='tight')
 
 # %%
@@ -689,7 +692,7 @@ ax.legend(
                 for i, m in enumerate([3, 5, 7, 9])
             ]
 )
-f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
+f.set_size_inches(w=width, h=height)
 f.savefig(out / f'2009.BAS.focus-throughput.W = {W}, R = {R}.pgf', bbox_inches='tight')
 
 # %%
@@ -782,7 +785,7 @@ ax.legend(
                 for i, m in enumerate([3, 5, 7, 9])
             ]
 )
-f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
+f.set_size_inches(w=width, h=height)
 f.savefig(out / f'2009.RTSCTS.focus-throughput.W = {W}, R = {R}.pgf', bbox_inches='tight')
 
 # %%
@@ -864,5 +867,5 @@ ax.legend(
                 for i, m in enumerate([3, 5, 7, 9])
             ]
 )
-f.set_size_inches(w=3.5 * 2.5, h=4.8 * 3.5 * 2.5 / 6.4)
+f.set_size_inches(w=width, h=height)
 f.savefig(out / f'2009.focus-p.W = {W}, R = {R}.pgf', bbox_inches='tight')
