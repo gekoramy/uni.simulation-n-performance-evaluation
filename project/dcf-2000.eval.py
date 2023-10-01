@@ -1,5 +1,5 @@
 # %%
-from matplotlib import colors
+from matplotlib.colors import ListedColormap
 from numpy.typing import NDArray
 from pathlib import Path
 from scipy.optimize import fsolve, minimize_scalar, OptimizeResult
@@ -188,9 +188,12 @@ ax1: plt.Axes
 ax2: plt.Axes
 f, (ax1, ax2) = plt.subplots(2, 1, sharex='all', height_ratios=[1, 3])
 
-cmap: colors.ListedColormap = colors.ListedColormap(['#ED706B', 'white', '#6CCDAF'])
-
-ax1.pcolor(station2successes.T - station2collisions.T, cmap=cmap, vmin=-1, vmax=1)
+ax1.pcolor(
+    station2successes.T - station2collisions.T,
+    cmap=ListedColormap(['#ED706B', 'white', '#6CCDAF']),
+    vmin=-1,
+    vmax=1
+)
 
 for collision_p in station2collision_p.T:
     ax2.plot(
