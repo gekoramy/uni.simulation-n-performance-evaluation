@@ -42,26 +42,20 @@ def simulation(
         mask: NDArray[bool] = waiting == span
         contenders: NDArray[int] = np.flatnonzero(mask)
 
+        yield Log(
+            span=span,
+            contenders=mask,
+            attempt=retries.copy(),
+        )
+
         waiting = waiting - span
 
         match contenders.size:
 
             case 1:
-                yield Log(
-                    span=span,
-                    contenders=mask,
-                    attempt=retries.copy(),
-                )
-
                 retries[contenders] = 0
 
             case _:
-                yield Log(
-                    span=span,
-                    contenders=mask,
-                    attempt=retries.copy(),
-                )
-
                 waiting -= 1
                 retries[contenders] += 1
                 retries[retries > R] = 0
