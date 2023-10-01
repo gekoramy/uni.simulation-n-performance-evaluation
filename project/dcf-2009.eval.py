@@ -1,5 +1,5 @@
 # %%
-from matplotlib.colors import Colormap
+from matplotlib.colors import Colormap, ListedColormap
 from numpy.typing import NDArray
 from pathlib import Path
 from scipy.optimize import fsolve
@@ -134,14 +134,103 @@ slot_time: int = 9
 sifs: int = 16
 difs: int = sifs + 2 * slot_time
 
-n: int = 30  # # of STAs
+n: int = 5  # # of STAs
 W: int = 2 ** 5  # W = W min
 m: int = 5  # W max = W * 2 ** m
 R: int = m  # max # of retries
 
 # %%
-b: int = 500
-batch_size: int = 1_000
+samples: int = 200
+logs: pd.DataFrame = pd.read_csv(f'assets/2009.n={n} W={W} m={m} R={R}.csv', nrows=samples)
+
+contenders: pd.DataFrame = logs.iloc[:, 1:1 + n]
+successes: NDArray[bool] = np.count_nonzero(contenders, 1) == 1
+
+spans: NDArray[int] = logs.iloc[:, 0] * slot_time
+ts: NDArray[int] = np.where(
+    successes,
+    BAS_time_success(mpdu, sifs, difs, ack, channel_bit_rate),
+    BAS_time_collision(mpdu, sifs, difs, ack, channel_bit_rate),
+)
+
+# %%
+merge: NDArray[int] = np.empty(ts.shape[0] * 2, dtype=int)
+merge[0::2] = spans
+merge[1::2] = ts
+
+mmm: NDArray[int] = np.repeat(np.where(successes, 1, -1), 2)
+
+success: NDArray[int] = successes * payload  # bit
+
+span_end: NDArray[int] = spans + ts  # mus
+
+throughput: NDArray[float] = np.cumsum(success) / np.cumsum(span_end)  # bit/mus -> Mbit/s
+
+f: plt.Figure
+ax1: plt.Axes
+ax2: plt.Axes
+f, (ax1, ax2) = plt.subplots(2, 1, sharex='all', height_ratios=[1, 5])
+
+ax1.fill_between(np.cumsum(merge) / 1e6, 1, where=mmm > 0, color='#6CCDAF')
+ax1.fill_between(np.cumsum(merge) / 1e6, 1, where=mmm < 0, color='#ED706B')
+
+ax2.plot(np.cumsum(span_end) / 1e6, throughput)
+
+ax1.set_ylabel('channel usage')
+ax1.set_ylim(-.5, 1.5)
+ax1.set_yticks([])
+ax2.set_ylabel('throughput [Mbit/s]')
+ax2.set_xlabel('time [s]')
+ax2.grid(True, linestyle='--')
+
+ax1.set_title(f'2009 BAS $n = {n}, W = {W}, m = {m}$')
+f.subplots_adjust(hspace=0)
+f.set_size_inches(w=width * 2, h=height * 2 / 3)
+f.savefig(out / f'2009.BAS.throughput.n = {n}, W = {W}, m = {m}.pgf', bbox_inches='tight')
+
+# %%
+contenders: pd.DataFrame = logs.iloc[:, 1:1 + n]
+
+station2successes = np.where(successes[:, np.newaxis], contenders, 0)
+station2collisions = np.where(successes[:, np.newaxis], 0, contenders)
+
+station2collision_p: NDArray[float] = np.cumsum(station2collisions, axis=0) / np.cumsum(station2collisions + station2successes, axis=0)
+
+f: plt.Figure
+ax1: plt.Axes
+ax2: plt.Axes
+f, (ax1, ax2) = plt.subplots(2, 1, sharex='all', height_ratios=[1, 3])
+
+ax1.pcolor(
+    station2successes.T - station2collisions.T,
+    cmap=ListedColormap(['#ED706B', 'white', '#6CCDAF']),
+    vmin=-1,
+    vmax=1
+)
+
+for collision_p in station2collision_p.T:
+    ax2.plot(
+        range(samples),
+        collision_p,
+        color='grey',
+        alpha=.2,
+    )
+
+ax2.plot(range(samples), np.mean(station2collision_p, axis=1))
+
+ax2.set_ylabel('$p$')
+ax2.set_xlabel('contentions')
+ax2.grid(True, axis='y', linestyle='--')
+
+ax1.set_title(f'2000 $n = {n}, W = {W}, m = {m}$')
+ax1.set_yticks([.5, 1.5, 2.5, 3.5, 4.5], [f'STA \#{i + 1}' for i in range(n)])
+f.subplots_adjust(hspace=0)
+f.set_size_inches(w=width * 2, h=height * 2 / 3)
+f.savefig(out / f'2009.p.n = {n}, W = {W}, m = {m}.pgf', bbox_inches='tight')
+
+# %%
+b: int = 50 // 2
+batch_size: int = 10_000 * 2
 
 # %%
 logs: pd.DataFrame = pd.read_csv(f'assets/2009.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)
@@ -180,7 +269,7 @@ ax1.hlines(
     y=throughput_s,
     xmin=np.arange(0, b) * batch_size,
     xmax=(np.arange(0, b) + 1) * batch_size,
-    colors=[cmap(i) for i in range(b)],
+    colors=['grey'] * b,
     alpha=.2,
 )
 
@@ -202,26 +291,13 @@ for ax in [ax1, ax2]:
     )
     ax.axhline(
         S(
-            n=n, W=W, payload=payload, slot_time=slot_time,
-            tau=tau_p(n, W, R)[0],
+            n=n, W=W, payload=payload, slot_time=slot_time, tau=tau_p(n=n, W=W, R=R)[0],
             Ts=BAS_time_success(mpdu, sifs, difs, ack, channel_bit_rate),
             Tc=BAS_time_collision(mpdu, sifs, difs, ack, channel_bit_rate)
         ),
         alpha=.5,
         label=r'$S$',
         color='red',
-        linestyle='--',
-    )
-    ax.axhline(
-        S(
-            n=n, W=W, payload=payload, slot_time=slot_time,
-            tau=tau_p_revised(n, W, m, R)[0],
-            Ts=BAS_time_success(mpdu, sifs, difs, ack, channel_bit_rate),
-            Tc=BAS_time_collision(mpdu, sifs, difs, ack, channel_bit_rate)
-        ),
-        alpha=.5,
-        label=r'$S\'$',
-        color='purple',
         linestyle='--',
     )
 
@@ -233,6 +309,13 @@ f.subplots_adjust(hspace=0)
 ax1.set_title(f'2009 BAS $n = {n}, W = {W}, m = {m}, R = {R}$')
 f.set_size_inches(w=width, h=height)
 f.savefig(out / f'2009.BAS.throughputs.n = {n}, W = {W}, m = {m}, R = {R}.pgf', bbox_inches='tight')
+
+# %%
+n = 30
+
+# %%
+b: int = 500
+batch_size: int = 1_000
 
 # %%
 ax: plt.Axes
