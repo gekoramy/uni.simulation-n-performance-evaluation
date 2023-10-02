@@ -27,7 +27,7 @@ matplotlib.rcParams.update({
 width: float = 8.75
 height: float = 6.25
 
-cmap: Colormap = matplotlib.colormaps['Paired']
+cmap: Colormap = matplotlib.colormaps['Set1']
 
 
 # %%
