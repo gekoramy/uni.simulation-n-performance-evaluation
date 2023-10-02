@@ -58,12 +58,13 @@ def S(
 
 
 # %%
-payload: int = 8184
-mac_h: int = 272
-phy_h: int = 128
-ack: int = 112 + phy_h
-rts: int = 160 + phy_h
-cts: int = 112 + phy_h
+payload: int = 8 * 1023
+mac_h: int = 8 * 34
+phy_h: int = 8 * 16
+
+ack: int = 8 * 14 + phy_h
+rts: int = 8 * 20 + phy_h
+cts: int = 8 * 14 + phy_h
 
 channel_bit_rate: int = 1  # Mbit/s -> bit/mus DO NOT CHANGE OTHERWISE TIMESPANS MUST RETURN FLOAT
 propagation_delay: int = 1

@@ -76,18 +76,18 @@ def S(
     return (Ps * sEP) / ((1 - Pb) * slot_time + Ps * sTs + (Pb - Ps) * sTc)
 
 # %%
-payload: int = 8 * 1500
-mac_h: int = 36
-phy_h: int = 120
+payload: int = 8 * 1023
+mac_h: int = 8 * 34
+phy_h: int = 8 * 16
 mpdu: int = mac_h + phy_h + payload
-ack: int = 112 + phy_h
-rts: int = 160 + phy_h
-cts: int = 112 + phy_h
+ack: int = 8 * 14 + phy_h
+rts: int = 8 * 20 + phy_h
+cts: int = 8 * 14 + phy_h
 
-channel_bit_rate: int = 6  # Mbit/s -> bit/mus
+channel_bit_rate: int = 1  # Mbit/s -> bit/mus
 
-slot_time: int = 9
-sifs: int = 16
+slot_time: int = 50
+sifs: int = 28
 difs: int = sifs + 2 * slot_time
 
 n: int = 5  # # of STAs
