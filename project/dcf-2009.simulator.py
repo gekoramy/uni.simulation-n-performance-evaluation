@@ -77,12 +77,14 @@ for n, W, m, R in tqdm([(n, W, m, R) for n in [5, 10, 15, 20, 30, 50] for W in [
         simulation(shop, n=n, W=W, m=m, R=R)
     )
 
+    spans, contenders, attempts = zip(*[(x.span, x.contenders, x.attempt) for x in ls])
+
     pd.concat(
         [
-            pd.DataFrame([x.span for x in ls], columns=['span']),
+            pd.DataFrame(spans, columns=['span']),
             pd.concat([
-                pd.DataFrame([x.contenders for x in ls]),
-                pd.DataFrame([x.attempt for x in ls]),
+                pd.DataFrame(contenders),
+                pd.DataFrame(attempts),
             ], axis=1, keys=['contenders', 'attempt'])
         ]
         , axis=1
@@ -95,12 +97,14 @@ for n, W, m, R in tqdm([(n, W, m, R) for n in [5, 10, 15, 20, 30, 50] for W in [
         simulation(shop, n=n, W=W, m=m, R=R)
     )
 
+    spans, contenders, attempts = zip(*[(x.span, x.contenders, x.attempt) for x in ls])
+
     pd.concat(
         [
-            pd.DataFrame([x.span for x in ls], columns=['span']),
+            pd.DataFrame(spans, columns=['span']),
             pd.concat([
-                pd.DataFrame([x.contenders for x in ls]),
-                pd.DataFrame([x.attempt for x in ls]),
+                pd.DataFrame(contenders),
+                pd.DataFrame(attempts),
             ], axis=1, keys=['contenders', 'attempt'])
         ]
         , axis=1
