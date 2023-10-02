@@ -33,7 +33,7 @@ def simulation(
 ) -> t.Iterator[Log]:
     rng4backoff: np.random.Generator = np.random.default_rng(next(seeds))
 
-    retries: NDArray[int] = np.full(n, m, dtype=int)
+    retries: NDArray[int] = np.full(n, R, dtype=int)
     waiting: NDArray[int] = np.zeros(n, dtype=int)
 
     while True:
