@@ -71,7 +71,7 @@ def simulation(
 shop: t.Iterator[NDArray[np.uint32]] = iter(SeedSequence(17).generate_state(10_000))
 
 # %%
-for n, W, m, R in tqdm([(n, W, m, R) for n in [5, 10, 15, 20, 30, 50] for W in [32, 128, 256] for m in [3, 5] for R in [m, m + 2]]):
+for n, W, m, R in tqdm([(n, W, m, R) for n in [5, 10, 15, 20, 30, 50] for W in [16, 32, 128] for m in [3, 5] for R in [m, m + 4]]):
     ls: list[Log] = mit.take(
         100 * 5_000,
         simulation(shop, n=n, W=W, m=m, R=R)
