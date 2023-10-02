@@ -4,7 +4,6 @@ from numpy.typing import NDArray
 from pathlib import Path
 from scipy.optimize import fsolve
 
-import itertools as it
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -280,180 +279,184 @@ b: int = 500
 batch_size: int = 1_000
 
 # %%
-ax: plt.Axes
-f, ax = plt.subplots(1, 1)
+for W in [16, 32, 128]:
 
-ns: NDArray[float] = np.linspace(5, 50, 1_000)
+    ax: plt.Axes
+    f, ax = plt.subplots(1, 1)
 
-for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 5] for R in [m, m + 2]])):
-    ax.plot(
-        ns,
-        [
-            S(
-                n=n, W=W, payload=payload, slot_time=slot_time,
-                tau=tau_p(n, W, R)[0],
-                Ts=BAS_time_success,
-                Tc=BAS_time_collision
-            )
-            for n
-            in ns
-        ],
-        color=cmap(i),
-        alpha=.5,
-    )
+    ns: NDArray[float] = np.linspace(5, 50, 1_000)
 
-    ax.plot(
-        ns,
-        [
-            S(
-                n=n, W=W, payload=payload, slot_time=slot_time,
-                tau=tau_p_revised(n, W, m, R)[0],
-                Ts=BAS_time_success,
-                Tc=BAS_time_collision
-            )
-            for n
-            in ns
-        ],
-        color=cmap(i),
-        linestyle='--',
-        alpha=.5,
-    )
-
-    simulated: NDArray[...] = np.asarray([
-        (n, grand_mean, grand_mean - ci[0])
-        for n in [5, 10, 15, 20, 30, 50]
-        for logs in [pd.read_csv(f'assets/2009.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)]
-        for contenders in [logs.iloc[:, 1:1 + n]]
-        for successes in [np.count_nonzero(contenders, 1) == 1]
-        for spans in [logs.iloc[:, 0] * slot_time]
-        for ts in [np.where(
-            successes,
-            BAS_time_success,
-            BAS_time_collision + slot_time,
-        )]
-        for success in [successes * payload]  # bit
-        for span_end in [spans + ts]  # mus
-        for success_s in [success.reshape(b, batch_size)]  # bit
-        for span_end_s in [span_end.to_numpy().reshape(b, batch_size)]  # mus
-        for throughput_s in [np.sum(success_s, 1) / np.sum(span_end_s, 1)]  # bit/mus -> Mbit/s
-        for grand_mean in [np.mean(throughput_s)]
-        for ci in [sp.stats.t.interval(confidence=.95, loc=grand_mean, scale=sp.stats.sem(throughput_s), df=b - 1)]
-    ])
-
-    ax.errorbar(
-        simulated[:, 0],
-        simulated[:, 1],
-        simulated[:, 2],
-        marker=4,
-        capsize=4,
-        linestyle='',
-        color=cmap(i),
-    )
-
-ax.set_xticks(range(0, 51, 5))
-ax.grid(True, linestyle='--')
-ax.set_title('2009 BAS')
-ax.set_ylabel('saturation throughput [Mbit/s]')
-ax.set_xlabel('STAs')
-ax.legend(
-    handles=[
-        matplotlib.patches.Patch(
+    for i, (m, R) in enumerate([(m, R) for m in [3, 5] for R in [m, m + 4]]):
+        ax.plot(
+            ns,
+            [
+                S(
+                    n=n, W=W, payload=payload, slot_time=slot_time,
+                    tau=tau_p(n, W, R)[0],
+                    Ts=BAS_time_success,
+                    Tc=BAS_time_collision
+                )
+                for n
+                in ns
+            ],
             color=cmap(i),
-            label=f'$W = {W}, m = {m}, R={R}$'
+            alpha=.5,
         )
-        for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 5] for R in [m, m + 2]]))
-    ]
-)
-f.set_size_inches(w=width, h=height)
-f.savefig(out / f'2009.BAS.multi-throughput.pgf', bbox_inches='tight')
+
+        ax.plot(
+            ns,
+            [
+                S(
+                    n=n, W=W, payload=payload, slot_time=slot_time,
+                    tau=tau_p_revised(n, W, m, R)[0],
+                    Ts=BAS_time_success,
+                    Tc=BAS_time_collision
+                )
+                for n
+                in ns
+            ],
+            color=cmap(i),
+            linestyle='--',
+            alpha=.5,
+        )
+
+        simulated: NDArray[...] = np.asarray([
+            (n, grand_mean, grand_mean - ci[0])
+            for n in [5, 10, 15, 20, 30, 50]
+            for logs in [pd.read_csv(f'assets/2009.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)]
+            for contenders in [logs.iloc[:, 1:1 + n]]
+            for successes in [np.count_nonzero(contenders, 1) == 1]
+            for spans in [logs.iloc[:, 0] * slot_time]
+            for ts in [np.where(
+                successes,
+                BAS_time_success,
+                BAS_time_collision + slot_time,
+            )]
+            for success in [successes * payload]  # bit
+            for span_end in [spans + ts]  # mus
+            for success_s in [success.reshape(b, batch_size)]  # bit
+            for span_end_s in [span_end.to_numpy().reshape(b, batch_size)]  # mus
+            for throughput_s in [np.sum(success_s, 1) / np.sum(span_end_s, 1)]  # bit/mus -> Mbit/s
+            for grand_mean in [np.mean(throughput_s)]
+            for ci in [sp.stats.t.interval(confidence=.95, loc=grand_mean, scale=sp.stats.sem(throughput_s), df=b - 1)]
+        ])
+
+        ax.errorbar(
+            simulated[:, 0],
+            simulated[:, 1],
+            simulated[:, 2],
+            marker=4,
+            capsize=4,
+            linestyle='',
+            color=cmap(i),
+        )
+
+    ax.set_xticks(range(0, 51, 5))
+    ax.grid(True, linestyle='--')
+    ax.set_title(f'2009 BAS $W = {W}$')
+    ax.set_ylabel('saturation throughput [Mbit/s]')
+    ax.set_xlabel('STAs')
+    ax.legend(
+        handles=[
+            matplotlib.patches.Patch(
+                color=cmap(i),
+                label=f'$m = {m}, R={R}$'
+            )
+            for i, (m, R) in enumerate([(m, R) for m in [3, 5] for R in [m, m + 4]])
+        ]
+    )
+    f.set_size_inches(w=width, h=height)
+    f.savefig(out / f'2009.BAS.multi-throughput.W = {W}.pgf', bbox_inches='tight')
 
 # %%
-ax: plt.Axes
-f, ax = plt.subplots(1, 1)
+for W in [16, 32, 128]:
 
-ns: NDArray[float] = np.linspace(5, 50, 1_000)
+    ax: plt.Axes
+    f, ax = plt.subplots(1, 1)
 
-for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 5] for R in [m, m + 2]])):
-    ax.plot(
-        ns,
-        [
-            S(
-                n=n, W=W, payload=payload, slot_time=slot_time,
-                tau=tau_p(n, W, R)[0],
-                Ts=RTSCTS_time_success,
-                Tc=RTSCTS_time_collision,
-            )
-            for n
-            in ns
-        ],
-        color=cmap(i),
-        alpha=.5,
-    )
+    ns: NDArray[float] = np.linspace(5, 50, 1_000)
 
-    ax.plot(
-        ns,
-        [
-            S(
-                n=n, W=W, payload=payload, slot_time=slot_time,
-                tau=tau_p_revised(n, W, m, R)[0],
-                Ts=RTSCTS_time_success,
-                Tc=RTSCTS_time_collision,
-            )
-            for n
-            in ns
-        ],
-        color=cmap(i),
-        linestyle='--',
-        alpha=.5,
-    )
-
-    simulated: NDArray[...] = np.asarray([
-        (n, grand_mean, grand_mean - ci[0])
-        for n in [5, 10, 15, 20, 30, 50]
-        for logs in [pd.read_csv(f'assets/2009.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)]
-        for contenders in [logs.iloc[:, 1:1 + n]]
-        for successes in [np.count_nonzero(contenders, 1) == 1]
-        for spans in [logs.iloc[:, 0] * slot_time]
-        for ts in [np.where(
-            successes,
-            RTSCTS_time_success,
-            RTSCTS_time_collision + slot_time,
-        )]
-        for success in [successes * payload]  # bit
-        for span_end in [spans + ts]  # mus
-        for success_s in [success.reshape(b, batch_size)]  # bit
-        for span_end_s in [span_end.to_numpy().reshape(b, batch_size)]  # mus
-        for throughput_s in [np.sum(success_s, 1) / np.sum(span_end_s, 1)]  # bit/mus -> Mbit/s
-        for grand_mean in [np.mean(throughput_s)]
-        for ci in [sp.stats.t.interval(confidence=.95, loc=grand_mean, scale=sp.stats.sem(throughput_s), df=b - 1)]
-    ])
-
-    ax.errorbar(
-        simulated[:, 0],
-        simulated[:, 1],
-        simulated[:, 2],
-        marker=4,
-        capsize=4,
-        linestyle='',
-        color=cmap(i),
-    )
-
-ax.set_xticks(range(0, 51, 5))
-ax.grid(True, linestyle='--')
-ax.set_title('2009 RTS/CTS')
-ax.set_ylabel('saturation throughput [Mbit/s]')
-ax.set_xlabel('STAs')
-ax.legend(
-    handles=[
-        matplotlib.patches.Patch(
+    for i, (m, R) in enumerate([(m, R) for m in [3, 5] for R in [m, m + 4]]):
+        ax.plot(
+            ns,
+            [
+                S(
+                    n=n, W=W, payload=payload, slot_time=slot_time,
+                    tau=tau_p(n, W, R)[0],
+                    Ts=RTSCTS_time_success,
+                    Tc=RTSCTS_time_collision,
+                )
+                for n
+                in ns
+            ],
             color=cmap(i),
-            label=f'$W = {W}, m = {m}, R = {R}$'
+            alpha=.5,
         )
-        for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 5] for R in [m, m + 2]]))
-    ]
-)
-f.set_size_inches(w=width, h=height)
-f.savefig(out / f'2009.RTSCTS.multi-throughput.pgf', bbox_inches='tight')
+
+        ax.plot(
+            ns,
+            [
+                S(
+                    n=n, W=W, payload=payload, slot_time=slot_time,
+                    tau=tau_p_revised(n, W, m, R)[0],
+                    Ts=RTSCTS_time_success,
+                    Tc=RTSCTS_time_collision,
+                )
+                for n
+                in ns
+            ],
+            color=cmap(i),
+            linestyle='--',
+            alpha=.5,
+        )
+
+        simulated: NDArray[...] = np.asarray([
+            (n, grand_mean, grand_mean - ci[0])
+            for n in [5, 10, 15, 20, 30, 50]
+            for logs in [pd.read_csv(f'assets/2009.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)]
+            for contenders in [logs.iloc[:, 1:1 + n]]
+            for successes in [np.count_nonzero(contenders, 1) == 1]
+            for spans in [logs.iloc[:, 0] * slot_time]
+            for ts in [np.where(
+                successes,
+                RTSCTS_time_success,
+                RTSCTS_time_collision + slot_time,
+            )]
+            for success in [successes * payload]  # bit
+            for span_end in [spans + ts]  # mus
+            for success_s in [success.reshape(b, batch_size)]  # bit
+            for span_end_s in [span_end.to_numpy().reshape(b, batch_size)]  # mus
+            for throughput_s in [np.sum(success_s, 1) / np.sum(span_end_s, 1)]  # bit/mus -> Mbit/s
+            for grand_mean in [np.mean(throughput_s)]
+            for ci in [sp.stats.t.interval(confidence=.95, loc=grand_mean, scale=sp.stats.sem(throughput_s), df=b - 1)]
+        ])
+
+        ax.errorbar(
+            simulated[:, 0],
+            simulated[:, 1],
+            simulated[:, 2],
+            marker=4,
+            capsize=4,
+            linestyle='',
+            color=cmap(i),
+        )
+
+    ax.set_xticks(range(0, 51, 5))
+    ax.grid(True, linestyle='--')
+    ax.set_title(f'2009 RTS/CTS $W = {W}$')
+    ax.set_ylabel('saturation throughput [Mbit/s]')
+    ax.set_xlabel('STAs')
+    ax.legend(
+        handles=[
+            matplotlib.patches.Patch(
+                color=cmap(i),
+                label=f'$m = {m}, R = {R}$'
+            )
+            for i, (m, R) in enumerate([(m, R) for m in [3, 5] for R in [m, m + 4]])
+        ]
+    )
+    f.set_size_inches(w=width, h=height)
+    f.savefig(out / f'2009.RTSCTS.multi-throughput.W = {W}.pgf', bbox_inches='tight')
 
 # %%
 b: int = 100
@@ -534,77 +537,79 @@ f.set_size_inches(w=width, h=height)
 f.savefig(out / f'2009.p.n = {n}, W = {W}, m = {m}, R = {R}.pgf', bbox_inches='tight')
 
 # %%
-ax: plt.Axes
-f, ax = plt.subplots(1, 1)
+for W in [16, 32, 128]:
 
-ns: NDArray[float] = np.linspace(5, 50, 1_000)
+    ax: plt.Axes
+    f, ax = plt.subplots(1, 1)
 
-for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 5] for R in [m, m + 2]])):
-    plt.plot(
-        ns,
-        [
-            p
-            for n in ns
-            for _, p in [tau_p(n, W, R)]
-        ],
-        color=cmap(i),
-        alpha=.5,
-    )
+    ns: NDArray[float] = np.linspace(5, 50, 1_000)
 
-    plt.plot(
-        ns,
-        [
-            p
-            for n in ns
-            for _, p in [tau_p_revised(n, W, m, R)]
-        ],
-        color=cmap(i),
-        linestyle='--',
-        alpha=.5,
-    )
-
-    simulated: NDArray[...] = np.asarray([
-        (n, grand_mean, grand_mean - ci[0])
-        for n in [5, 10, 15, 20, 30, 50]
-        for logs in [pd.read_csv(f'assets/2009.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)]
-        for contenders in [logs.iloc[:, 1:1 + n]]
-        for successes in [np.count_nonzero(contenders, 1) == 1]
-        for station2successes_s in [np.where(successes[:, np.newaxis], contenders, 0).reshape(b, batch_size, n)]
-        for station2collisions_s in [np.where(successes[:, np.newaxis], 0, contenders).reshape(b, batch_size, n)]
-        for collision_p_s in [np.mean(
-            np.sum(station2collisions_s, axis=1) / np.sum(station2collisions_s + station2successes_s, axis=1),
-            axis=1
-        )]
-        for grand_mean in [np.mean(collision_p_s)]
-        for ci in [sp.stats.t.interval(confidence=.95, loc=grand_mean, scale=sp.stats.sem(collision_p_s), df=b - 1)]
-    ])
-
-    ax.errorbar(
-        simulated[:, 0],
-        simulated[:, 1],
-        simulated[:, 2],
-        marker=4,
-        capsize=4,
-        linestyle='',
-        color=cmap(i),
-    )
-
-ax.set_xticks(range(0, 51, 5))
-ax.grid(True, linestyle='--')
-ax.set_title('2009')
-ax.set_ylabel('$p$')
-ax.set_xlabel('STAs')
-ax.legend(
-    handles=[
-        matplotlib.patches.Patch(
+    for i, (m, R) in enumerate([(m, R) for m in [3, 5] for R in [m, m + 4]]):
+        plt.plot(
+            ns,
+            [
+                p
+                for n in ns
+                for _, p in [tau_p(n, W, R)]
+            ],
             color=cmap(i),
-            label=f'$W = {W}, m = {m}, R = {R}$',
+            alpha=.5,
         )
-        for i, (W, (m, R)) in enumerate(it.product([32, 128, 256], [(m, R) for m in [3, 5] for R in [m, m + 2]]))
-    ]
-)
-f.set_size_inches(w=width, h=height)
-f.savefig(out / f'2009.multi-p.pgf', bbox_inches='tight')
+
+        plt.plot(
+            ns,
+            [
+                p
+                for n in ns
+                for _, p in [tau_p_revised(n, W, m, R)]
+            ],
+            color=cmap(i),
+            linestyle='--',
+            alpha=.5,
+        )
+
+        simulated: NDArray[...] = np.asarray([
+            (n, grand_mean, grand_mean - ci[0])
+            for n in [5, 10, 15, 20, 30, 50]
+            for logs in [pd.read_csv(f'assets/2009.n={n} W={W} m={m} R={R}.csv', nrows=b * batch_size)]
+            for contenders in [logs.iloc[:, 1:1 + n]]
+            for successes in [np.count_nonzero(contenders, 1) == 1]
+            for station2successes_s in [np.where(successes[:, np.newaxis], contenders, 0).reshape(b, batch_size, n)]
+            for station2collisions_s in [np.where(successes[:, np.newaxis], 0, contenders).reshape(b, batch_size, n)]
+            for collision_p_s in [np.mean(
+                np.sum(station2collisions_s, axis=1) / np.sum(station2collisions_s + station2successes_s, axis=1),
+                axis=1
+            )]
+            for grand_mean in [np.mean(collision_p_s)]
+            for ci in [sp.stats.t.interval(confidence=.95, loc=grand_mean, scale=sp.stats.sem(collision_p_s), df=b - 1)]
+        ])
+
+        ax.errorbar(
+            simulated[:, 0],
+            simulated[:, 1],
+            simulated[:, 2],
+            marker=4,
+            capsize=4,
+            linestyle='',
+            color=cmap(i),
+        )
+
+    ax.set_xticks(range(0, 51, 5))
+    ax.grid(True, linestyle='--')
+    ax.set_title(f'2009 $W = {W}$')
+    ax.set_ylabel('$p$')
+    ax.set_xlabel('STAs')
+    ax.legend(
+        handles=[
+            matplotlib.patches.Patch(
+                color=cmap(i),
+                label=f'$m = {m}, R = {R}$',
+            )
+            for i, (m, R) in enumerate([(m, R) for m in [3, 5] for R in [m, m + 4]])
+        ]
+    )
+    f.set_size_inches(w=width, h=height)
+    f.savefig(out / f'2009.multi-p.W = {W}.pgf', bbox_inches='tight')
 
 # %%
 f: plt.Figure
