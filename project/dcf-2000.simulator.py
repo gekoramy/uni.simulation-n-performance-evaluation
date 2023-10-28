@@ -28,16 +28,18 @@ def simulation(
         n: int,
         W: int,
         m: int,
+        ack_timeout: int = 6,
 ) -> t.Iterator[Log]:
     rng4backoff: np.random.Generator = np.random.default_rng(next(seeds))
 
+    timeouts: NDArray[bool] = np.full(n, fill_value=False)
     retries: NDArray[int] = np.zeros(n, dtype=int)
     waiting: NDArray[int] = np.zeros(n, dtype=int)
 
     while True:
 
-        span: int = np.amin(waiting)
-        mask: NDArray[bool] = waiting == span
+        span: int = np.amin(waiting + timeouts * ack_timeout)
+        mask: NDArray[bool] = (waiting + timeouts * ack_timeout) == span
         contenders: NDArray[int] = np.flatnonzero(mask)
 
         yield Log(
@@ -46,14 +48,16 @@ def simulation(
             attempt=retries.copy(),
         )
 
-        waiting = waiting - span - 1
+        waiting = waiting + np.minimum(timeouts * ack_timeout, span) - span - 1
 
         match contenders.size:
 
             case 1:
+                timeouts = np.full(n, fill_value=False)
                 retries[contenders] = 0
 
             case _:
+                timeouts = mask
                 retries[contenders] += 1
                 retries.clip(max=m, out=retries)
 
