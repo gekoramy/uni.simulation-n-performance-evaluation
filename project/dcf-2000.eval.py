@@ -66,7 +66,7 @@ ack: int = 8 * 14 + phy_h
 rts: int = 8 * 20 + phy_h
 cts: int = 8 * 14 + phy_h
 
-channel_bit_rate: int = 1  # Mbit/s -> bit/mus DO NOT CHANGE OTHERWISE TIMESPANS MUST RETURN FLOAT
+channel_bit_rate: int = 1  # Mbit/s
 propagation_delay: int = 1
 slot_time: int = 50
 sifs: int = 28
