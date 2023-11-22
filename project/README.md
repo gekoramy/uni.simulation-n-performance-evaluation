@@ -1,5 +1,7 @@
 # IEEE 802.11 DCF - DES against SOTA analytical model
 
+[Report](report.pdf)
+
 |              |                                @ |
 |--------------|---------------------------------:|
 | Luca Mosetti | luca.mosetti-1@studenti.unitn.it |
